@@ -50,12 +50,14 @@ async function pollOnce(config) {
   try {
     const pollUrl = `${config.apiUrl}/api/desktop-queue/poll?limit=1`;
     const res = await request('GET', pollUrl, config.token, null);
+    console.log(`[Dopamind] Poll response: ${res.status}`, JSON.stringify(res.data));
 
-    if (res.status !== 200 || !res.data?.messages?.length) {
+    const messages = res.data?.messages || res.data?.data?.messages;
+    if (res.status !== 200 || !messages?.length) {
       return;
     }
 
-    for (const msg of res.data.messages) {
+    for (const msg of messages) {
       await processMessage(config, msg);
     }
   } catch (err) {
