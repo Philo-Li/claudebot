@@ -123,7 +123,7 @@ async function startBot() {
 
       await dopamindClient.start({
         dopamindConfig: {
-          apiUrl: envConfig.dopamindApiUrl || 'https://api.dopamind.app',
+          apiUrl: envConfig.dopamindApiUrl || 'https://staging-api.dopamind.app',
           token: envConfig.dopamindToken,
           defaultWorkDir: envConfig.workDir || process.cwd(),
         },
