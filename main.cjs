@@ -109,7 +109,7 @@ async function startBot() {
     }
 
     // Start Dopamind client if enabled
-    const hasDopamind = envConfig.dopamindEnabled === 'true' && envConfig.dopamindToken && envConfig.dopamindDeviceId;
+    const hasDopamind = envConfig.dopamindEnabled === 'true' && envConfig.dopamindToken;
     if (hasDopamind) {
       if (!dopamindClient) {
         dopamindClient = require('./dopamind-client.cjs');
@@ -123,9 +123,8 @@ async function startBot() {
 
       await dopamindClient.start({
         dopamindConfig: {
-          apiUrl: envConfig.dopamindApiUrl,
+          apiUrl: envConfig.dopamindApiUrl || 'https://api.dopamind.app',
           token: envConfig.dopamindToken,
-          deviceId: envConfig.dopamindDeviceId,
           defaultWorkDir: envConfig.workDir || process.cwd(),
         },
       });
@@ -181,7 +180,6 @@ function parseEnvFile() {
     dopamindEnabled: '',
     dopamindApiUrl: '',
     dopamindToken: '',
-    dopamindDeviceId: '',
   };
   if (!fs.existsSync(envPath)) return result;
   const content = fs.readFileSync(envPath, 'utf-8');
@@ -198,12 +196,11 @@ function parseEnvFile() {
     else if (key === 'DOPAMIND_ENABLED') result.dopamindEnabled = val;
     else if (key === 'DOPAMIND_API_URL') result.dopamindApiUrl = val;
     else if (key === 'DOPAMIND_TOKEN') result.dopamindToken = val;
-    else if (key === 'DOPAMIND_DEVICE_ID') result.dopamindDeviceId = val;
   }
   return result;
 }
 
-function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindApiUrl, dopamindToken, dopamindDeviceId }) {
+function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken }) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -216,9 +213,7 @@ function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindApiUrl
     '',
     '# Dopamind Integration',
     `DOPAMIND_ENABLED=${dopamindEnabled || 'false'}`,
-    `DOPAMIND_API_URL=${dopamindApiUrl || ''}`,
     `DOPAMIND_TOKEN=${dopamindToken || ''}`,
-    `DOPAMIND_DEVICE_ID=${dopamindDeviceId || ''}`,
   ].join('\n');
   fs.writeFileSync(envPath, content);
 }
