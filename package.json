@@ -1,0 +1,14 @@
+{
+  "name": "claude-telegram-bot",
+  "version": "1.0.0",
+  "description": "Control Claude Code via Telegram",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^2.1.29",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
