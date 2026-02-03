@@ -2,13 +2,23 @@
   "name": "claude-telegram-bot",
   "version": "1.0.0",
   "description": "Control Claude Code via Telegram",
-  "main": "bot.js",
+  "main": "main.cjs",
   "type": "module",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "electron:dev": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^2.1.29",
+    "call-bind-apply-helpers": "^1.0.2",
+    "call-bound": "^1.0.4",
+    "get-intrinsic": "^1.3.0",
     "node-telegram-bot-api": "^0.66.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
   }
 }

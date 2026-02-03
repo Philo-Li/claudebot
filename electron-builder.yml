@@ -1,0 +1,52 @@
+appId: com.claudebot.telegram
+productName: ClaudeBot
+copyright: Copyright © 2024
+
+directories:
+  output: dist
+
+files:
+  - "**/*"
+  - "!dist"
+  - "!.env"
+  - "!.env.example"
+  - "!fix-modules.cjs"
+
+afterPack: ./fix-modules.cjs
+
+win:
+  icon: assets/icon.ico
+  signAndEditExecutable: false
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+mac:
+  icon: assets/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  extendInfo:
+    LSUIElement: true
+
+linux:
+  icon: assets/icon.png
+  target:
+    - target: AppImage
+    - target: deb
+  category: Utility
+
+asar: false
+npmRebuild: false

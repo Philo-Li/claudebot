@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 24px;
+      color: #333;
+      user-select: none;
+    }
+    h2 { margin-bottom: 20px; font-size: 18px; font-weight: 600; }
+    h3 {
+      margin-top: 20px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      border-top: 1px solid #ddd;
+      padding-top: 16px;
+    }
+    .field { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #555;
+    }
+    .hint {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    .hint a {
+      color: #4a9eff;
+      text-decoration: none;
+    }
+    .hint a:hover { text-decoration: underline; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #4a9eff; }
+    input:disabled {
+      background: #eee;
+      color: #999;
+    }
+    .dir-row {
+      display: flex;
+      gap: 8px;
+    }
+    .dir-row input { flex: 1; }
+    .dir-row button {
+      padding: 8px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .dir-row button:hover { background: #eee; }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .checkbox-row label {
+      margin-bottom: 0;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+    }
+    .actions {
+      margin-top: 24px;
+      text-align: right;
+    }
+    .actions button {
+      padding: 8px 28px;
+      border: none;
+      border-radius: 6px;
+      background: #4a9eff;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .actions button:hover { background: #3a8eef; }
+    .actions button:disabled {
+      background: #b0d0ff;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <h2>ClaudeBot 设置</h2>
+
+  <div class="field">
+    <label>Telegram Bot Token</label>
+    <div class="hint">从 <a href="#" onclick="openExternal('https://t.me/BotFather')">@BotFather</a> 获取</div>
+    <input type="password" id="token" placeholder="123456:ABC-DEF..." spellcheck="false" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>允许的用户 ID</label>
+    <div class="hint">多个 ID 用英文逗号分隔，可通过 <a href="#" onclick="openExternal('https://t.me/userinfobot')">@userinfobot</a> 查询</div>
+    <input type="text" id="userIds" placeholder="123456789, 987654321" spellcheck="false" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>工作目录</label>
+    <div class="hint">Bot 的文件操作根目录</div>
+    <div class="dir-row">
+      <input type="text" id="workDir" placeholder="C:\Work" spellcheck="false" autocomplete="off">
+      <button type="button" id="browseBtn">浏览...</button>
+    </div>
+  </div>
+
+  <h3>Dopamind Integration</h3>
+
+  <div class="checkbox-row">
+    <input type="checkbox" id="dopamindEnabled">
+    <label for="dopamindEnabled">Enable Dopamind</label>
+  </div>
+
+  <div class="field">
+    <label>API URL</label>
+    <div class="hint">Dopamind backend URL</div>
+    <input type="text" id="dopamindApiUrl" placeholder="https://api.dopamind.app" spellcheck="false" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>Device Auth Token</label>
+    <div class="hint">Generated from Dopamind app (dpm_...)</div>
+    <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>Device ID</label>
+    <div class="hint">Your device's unique identifier</div>
+    <input type="text" id="dopamindDeviceId" placeholder="device-uuid" spellcheck="false" autocomplete="off">
+  </div>
+
+  <div class="actions">
+    <button type="button" id="saveBtn">保存</button>
+  </div>
+
+  <script>
+    function openExternal(url) {
+      // Prevent default anchor behavior; shell.openExternal is handled via preload if needed
+      // For simplicity, window.open works in Electron with proper config
+      window.open(url, '_blank');
+    }
+
+    function updateDopamindFieldsState() {
+      const enabled = document.getElementById('dopamindEnabled').checked;
+      document.getElementById('dopamindApiUrl').disabled = !enabled;
+      document.getElementById('dopamindToken').disabled = !enabled;
+      document.getElementById('dopamindDeviceId').disabled = !enabled;
+    }
+
+    async function init() {
+      try {
+        const config = await window.configAPI.getConfig();
+        if (config.token) document.getElementById('token').value = config.token;
+        if (config.userIds) document.getElementById('userIds').value = config.userIds;
+        if (config.workDir) document.getElementById('workDir').value = config.workDir;
+        // Dopamind fields
+        document.getElementById('dopamindEnabled').checked = config.dopamindEnabled === 'true';
+        if (config.dopamindApiUrl) document.getElementById('dopamindApiUrl').value = config.dopamindApiUrl;
+        if (config.dopamindToken) document.getElementById('dopamindToken').value = config.dopamindToken;
+        if (config.dopamindDeviceId) document.getElementById('dopamindDeviceId').value = config.dopamindDeviceId;
+        updateDopamindFieldsState();
+      } catch (e) {
+        // No existing config, fields stay empty
+      }
+    }
+
+    document.getElementById('dopamindEnabled').addEventListener('change', updateDopamindFieldsState);
+
+    document.getElementById('browseBtn').addEventListener('click', async () => {
+      const dir = await window.configAPI.selectDirectory();
+      if (dir) {
+        document.getElementById('workDir').value = dir;
+      }
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        await window.configAPI.saveConfig({
+          token: document.getElementById('token').value.trim(),
+          userIds: document.getElementById('userIds').value.trim(),
+          workDir: document.getElementById('workDir').value.trim(),
+          dopamindEnabled: document.getElementById('dopamindEnabled').checked ? 'true' : 'false',
+          dopamindApiUrl: document.getElementById('dopamindApiUrl').value.trim(),
+          dopamindToken: document.getElementById('dopamindToken').value.trim(),
+          dopamindDeviceId: document.getElementById('dopamindDeviceId').value.trim(),
+        });
+        // Window will be closed by main process after save
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '保存';
+        alert('保存失败: ' + e.message);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
