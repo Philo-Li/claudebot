@@ -141,21 +141,9 @@
   </div>
 
   <div class="field">
-    <label>API URL</label>
-    <div class="hint">Dopamind backend URL</div>
-    <input type="text" id="dopamindApiUrl" placeholder="https://api.dopamind.app" spellcheck="false" autocomplete="off">
-  </div>
-
-  <div class="field">
-    <label>Device Auth Token</label>
-    <div class="hint">Generated from Dopamind app (dpm_...)</div>
+    <label>Device Token</label>
+    <div class="hint">从 Dopamind App → ClaudeBot 页面生成 (dpm_...)</div>
     <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
-  </div>
-
-  <div class="field">
-    <label>Device ID</label>
-    <div class="hint">Your device's unique identifier</div>
-    <input type="text" id="dopamindDeviceId" placeholder="device-uuid" spellcheck="false" autocomplete="off">
   </div>
 
   <div class="actions">
@@ -171,9 +159,7 @@
 
     function updateDopamindFieldsState() {
       const enabled = document.getElementById('dopamindEnabled').checked;
-      document.getElementById('dopamindApiUrl').disabled = !enabled;
       document.getElementById('dopamindToken').disabled = !enabled;
-      document.getElementById('dopamindDeviceId').disabled = !enabled;
     }
 
     async function init() {
@@ -184,9 +170,7 @@
         if (config.workDir) document.getElementById('workDir').value = config.workDir;
         // Dopamind fields
         document.getElementById('dopamindEnabled').checked = config.dopamindEnabled === 'true';
-        if (config.dopamindApiUrl) document.getElementById('dopamindApiUrl').value = config.dopamindApiUrl;
         if (config.dopamindToken) document.getElementById('dopamindToken').value = config.dopamindToken;
-        if (config.dopamindDeviceId) document.getElementById('dopamindDeviceId').value = config.dopamindDeviceId;
         updateDopamindFieldsState();
       } catch (e) {
         // No existing config, fields stay empty
@@ -212,9 +196,7 @@
           userIds: document.getElementById('userIds').value.trim(),
           workDir: document.getElementById('workDir').value.trim(),
           dopamindEnabled: document.getElementById('dopamindEnabled').checked ? 'true' : 'false',
-          dopamindApiUrl: document.getElementById('dopamindApiUrl').value.trim(),
           dopamindToken: document.getElementById('dopamindToken').value.trim(),
-          dopamindDeviceId: document.getElementById('dopamindDeviceId').value.trim(),
         });
         // Window will be closed by main process after save
       } catch (e) {

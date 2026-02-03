@@ -67,7 +67,7 @@ function request(method, fullUrl, token, body) {
  */
 async function pollOnce(config) {
   try {
-    const pollUrl = `${config.apiUrl}/api/desktop-queue/poll?deviceId=${encodeURIComponent(config.deviceId)}&limit=1`;
+    const pollUrl = `${config.apiUrl}/api/desktop-queue/poll?limit=1`;
     const res = await request('GET', pollUrl, config.token, null);
 
     if (res.status !== 200 || !res.data?.messages?.length) {
@@ -173,10 +173,10 @@ async function processMessage(config, msg) {
 async function start({ dopamindConfig }) {
   if (running) return;
 
-  const { apiUrl, token, deviceId, defaultWorkDir } = dopamindConfig;
+  const { apiUrl, token, defaultWorkDir } = dopamindConfig;
 
-  if (!apiUrl || !token || !deviceId) {
-    console.error('[Dopamind] Missing required config (apiUrl, token, deviceId)');
+  if (!apiUrl || !token) {
+    console.error('[Dopamind] Missing required config (apiUrl, token)');
     return;
   }
 
@@ -186,9 +186,9 @@ async function start({ dopamindConfig }) {
   }
 
   running = true;
-  const config = { apiUrl, token, deviceId, defaultWorkDir };
+  const config = { apiUrl, token, defaultWorkDir };
 
-  console.log(`[Dopamind] Polling started (device: ${deviceId})`);
+  console.log(`[Dopamind] Polling started`);
   console.log(`[Dopamind] API: ${apiUrl}`);
 
   const poll = async () => {
