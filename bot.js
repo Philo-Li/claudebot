@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { spawn } from 'child_process';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 
 // ============== 配置 ==============
 function loadConfig() {
@@ -70,6 +70,27 @@ console.log(`Claude: ${claudePath}`);
 const bot = new TelegramBot(config.token, { polling: true });
 const runningProcesses = new Map();
 
+// ============== 会话持久化 ==============
+const SESSIONS_FILE = new URL('sessions.json', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
+
+function loadSessions() {
+  try {
+    if (existsSync(SESSIONS_FILE)) {
+      const data = JSON.parse(readFileSync(SESSIONS_FILE, 'utf-8'));
+      return new Map(Object.entries(data));
+    }
+  } catch {}
+  return new Map();
+}
+
+function saveSessions() {
+  const obj = Object.fromEntries(sessions);
+  writeFileSync(SESSIONS_FILE, JSON.stringify(obj, null, 2));
+}
+
+const sessions = loadSessions();
+console.log(`已加载 ${sessions.size} 个会话`);
+
 function isAllowed(userId) {
   if (config.allowedUsers.length === 0) return true;
   return config.allowedUsers.includes(userId);
@@ -77,12 +98,20 @@ function isAllowed(userId) {
 
 // ============== 调用 Claude Code ==============
 // 使用 spawn 直接执行 claude.exe，stdin 设为 ignore，通过 JSON 格式捕获输出
+// 支持通过 --resume 维持同一会话上下文
 async function callClaude(chatId, prompt, workDir) {
   return new Promise((resolve) => {
-    console.log(`[${new Date().toISOString()}] 执行: claude -p ...`);
-    console.log(`[工作目录] ${workDir}`);
+    const sessionId = sessions.get(chatId);
+    const args = ['-p', prompt, '--output-format', 'json', '--dangerously-skip-permissions'];
 
-    const proc = spawn(claudePath, ['-p', prompt, '--output-format', 'json'], {
+    if (sessionId) {
+      args.push('--resume', sessionId);
+    }
+
+    console.log(`[${new Date().toISOString()}] 执行: claude -p ...`);
+    console.log(`[工作目录] ${workDir}${sessionId ? ` [会话] ${sessionId}` : ' [新会话]'}`);
+
+    const proc = spawn(claudePath, args, {
       cwd: workDir,
       env: { ...process.env, FORCE_COLOR: '0' },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -113,10 +142,18 @@ async function callClaude(chatId, prompt, workDir) {
 
       try {
         const json = JSON.parse(stdout);
+
+        // 保存 session_id 用于后续会话恢复
+        if (json.session_id) {
+          sessions.set(chatId, json.session_id);
+          saveSessions();
+        }
+
         resolve({
           success: !json.is_error,
           output: json.result || json.errors?.join('\n') || '(无输出)',
-          cost: json.total_cost_usd
+          cost: json.total_cost_usd,
+          sessionId: json.session_id
         });
       } catch {
         resolve({
@@ -169,15 +206,24 @@ bot.onText(/\/start/, (msg) => {
 命令:
 /ask <问题> - 向 Claude 提问
 /run <指令> - 让 Claude 执行任务
+/new - 开始新会话（清除上下文）
 /stop - 停止当前任务
 /dir - 查看当前工作目录
 /setdir <路径> - 设置工作目录
 /status - 查看状态
 
 直接发送消息也会被当作指令发送给 Claude。
+连续对话会自动保持上下文，使用 /new 重置。
 
 当前工作目录: ${config.workDir}`
   );
+});
+
+bot.onText(/\/new/, (msg) => {
+  if (!isAllowed(msg.from.id)) return;
+  sessions.delete(msg.chat.id);
+  saveSessions();
+  bot.sendMessage(msg.chat.id, '已开始新会话。');
 });
 
 bot.onText(/\/stop/, (msg) => {
@@ -211,10 +257,12 @@ bot.onText(/\/setdir (.+)/, (msg, match) => {
 bot.onText(/\/status/, (msg) => {
   if (!isAllowed(msg.from.id)) return;
   const isRunning = runningProcesses.has(msg.chat.id);
+  const sessionId = sessions.get(msg.chat.id);
   bot.sendMessage(msg.chat.id,
 `状态:
 - 工作目录: ${config.workDir}
 - 任务状态: ${isRunning ? '运行中' : '空闲'}
+- 会话: ${sessionId ? sessionId.slice(0, 8) + '...' : '无（下次消息将开始新会话）'}
 - 你的用户 ID: ${msg.from.id}`
   );
 });
