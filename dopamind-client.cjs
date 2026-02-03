@@ -9,57 +9,38 @@
  * Exports: start({ dopamindConfig }), stop()
  */
 
-const https = require('https');
-const http = require('http');
-const url = require('url');
-
 let pollTimer = null;
 let running = false;
 let claudeRunner = null; // dynamically imported ESM module
 
 /**
- * Make an HTTP(S) request with JSON body
+ * Make an HTTP(S) request with JSON body using fetch
  */
-function request(method, fullUrl, token, body) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(fullUrl);
-    const isHttps = parsed.protocol === 'https:';
-    const lib = isHttps ? https : http;
+async function request(method, fullUrl, token, body) {
+  const parsed = new URL(fullUrl);
+  parsed.searchParams.set('token', token);
 
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) {
+    opts.body = JSON.stringify(body);
+  }
 
-    const bodyStr = body ? JSON.stringify(body) : null;
-    if (bodyStr) {
-      headers['Content-Length'] = Buffer.byteLength(bodyStr);
-    }
+  const res = await fetch(parsed.toString(), opts);
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = await res.text();
+  }
 
-    const opts = {
-      hostname: parsed.hostname,
-      port: parsed.port || (isHttps ? 443 : 80),
-      path: parsed.pathname + parsed.search,
-      method,
-      headers,
-    };
+  if (!res.ok) {
+    console.error(`[Dopamind] HTTP ${res.status} ${method} ${parsed.pathname}:`, data);
+  }
 
-    const req = lib.request(opts, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, data: JSON.parse(data) });
-        } catch {
-          resolve({ status: res.statusCode, data: data });
-        }
-      });
-    });
-
-    req.on('error', reject);
-    if (bodyStr) req.write(bodyStr);
-    req.end();
-  });
+  return { status: res.status, data };
 }
 
 /**
