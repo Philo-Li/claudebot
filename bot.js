@@ -313,7 +313,8 @@ if (isDirectRun) {
   if (process.env.LANGUAGE === 'en' || process.env.LANGUAGE === 'zh') {
     setLanguage(process.env.LANGUAGE);
   }
-  start().catch(err => {
+  const __dirname = dirname(__filename);
+  start({ sessionsPath: join(__dirname, 'sessions.json') }).catch(err => {
     console.error(t('bot.startFailed'), err.message);
     process.exit(1);
   });

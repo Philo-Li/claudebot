@@ -170,48 +170,68 @@ export function resetSessionUsage(sessionKey) {
 
 // ============== Stream message handler ==============
 
+function getToolDetail(toolName, input) {
+  switch (toolName) {
+    case 'Read':  return input.file_path || '';
+    case 'Edit':  return input.file_path || '';
+    case 'Write': return input.file_path || '';
+    case 'Bash': {
+      const cmd = input.command || '';
+      return cmd.slice(0, 80) + (cmd.length > 80 ? '...' : '');
+    }
+    case 'Glob':      return input.pattern || '';
+    case 'Grep':      return input.pattern || '';
+    case 'Task':      return input.description || '';
+    case 'WebSearch':  return input.query || '';
+    case 'WebFetch':   return input.url || '';
+    default:           return '';
+  }
+}
+
 export function handleStreamMessage(msg, sessionKey, onProgress) {
   if (!onProgress) return;
 
   if (msg.type === 'system') {
-    onProgress('[init]');
+    return;
   } else if (msg.type === 'assistant' && msg.message?.content) {
+    // Merge consecutive same-tool blocks into one line
+    let lastTool = null;
+    let lastDetails = [];
+
+    const flushTool = () => {
+      if (!lastTool) return;
+      const tag = `[tool:${lastTool.toLowerCase()}]`;
+      onProgress(lastDetails.length ? `${tag} ${lastDetails.join(', ')}` : tag);
+      lastTool = null;
+      lastDetails = [];
+    };
+
     for (const block of msg.message.content) {
       if (block.type === 'tool_use') {
-        const toolName = block.name;
-        const input = block.input || {};
-        let desc = '';
-
-        if (toolName === 'Read') {
-          desc = `[tool:read] ${input.file_path || ''}`;
-        } else if (toolName === 'Edit') {
-          desc = `[tool:edit] ${input.file_path || ''}`;
-        } else if (toolName === 'Write') {
-          desc = `[tool:write] ${input.file_path || ''}`;
-        } else if (toolName === 'Bash') {
-          const cmd = input.command || '';
-          desc = `[tool:bash] ${cmd.slice(0, 80)}${cmd.length > 80 ? '...' : ''}`;
-        } else if (toolName === 'Glob') {
-          desc = `[tool:glob] ${input.pattern || ''}`;
-        } else if (toolName === 'Grep') {
-          desc = `[tool:grep] ${input.pattern || ''}`;
-        } else if (toolName === 'Task') {
-          desc = `[tool:task] ${input.description || ''}`;
+        const detail = getToolDetail(block.name, block.input || {});
+        if (block.name === lastTool) {
+          lastDetails.push(detail);
         } else {
-          desc = `[tool:${toolName.toLowerCase()}]`;
+          flushTool();
+          lastTool = block.name;
+          lastDetails = detail ? [detail] : [];
         }
-
-        onProgress(desc);
-      } else if (block.type === 'text' && block.text) {
-        onProgress(block.text);
+      } else {
+        flushTool();
+        if (block.type === 'text' && block.text) {
+          const preview = block.text.slice(0, 200) + (block.text.length > 200 ? '...' : '');
+          onProgress(`[text] ${preview}`);
+        }
       }
     }
+    flushTool();
   }
+  // tool_result messages (type === 'user') are skipped — not useful for progress
 }
 
 // ============== Call Claude ==============
 
-export async function callClaude(sessionKey, prompt, workDir, onProgress) {
+export async function callClaude(sessionKey, prompt, workDir, onProgress, _retried) {
   return new Promise((resolve) => {
     const sessionId = sessions.get(sessionKey);
     const args = [
@@ -236,29 +256,11 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
     });
 
     runningProcesses.set(sessionKey, proc);
+    if (onProgress) onProgress('[init]');
 
     let stderr = '';
     let buffer = '';
     let finalResult = null;
-
-    // Buffer text blocks so only intermediate thinking is forwarded.
-    // When tool activity arrives, flush buffered text (it's intermediate).
-    // When result arrives, discard buffered text (it duplicates result.output).
-    const pendingTexts = [];
-    const flushPendingTexts = () => {
-      if (onProgress) {
-        for (const t of pendingTexts) onProgress(t);
-      }
-      pendingTexts.length = 0;
-    };
-    const bufferedProgress = onProgress ? (text) => {
-      if (text.startsWith('[tool:') || text === '[init]') {
-        flushPendingTexts();
-        onProgress(text);
-      } else {
-        pendingTexts.push(text);
-      }
-    } : null;
 
     proc.stdout.on('data', (data) => {
       buffer += data.toString();
@@ -272,8 +274,6 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
           const msg = JSON.parse(line);
 
           if (msg.type === 'result') {
-            // Discard buffered text — it duplicates result.output
-            pendingTexts.length = 0;
             if (msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
@@ -286,7 +286,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
             };
           }
 
-          handleStreamMessage(msg, sessionKey, bufferedProgress);
+          handleStreamMessage(msg, sessionKey, onProgress);
         } catch {}
       }
     });
@@ -303,7 +303,6 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
         try {
           const msg = JSON.parse(buffer);
           if (msg.type === 'result') {
-            pendingTexts.length = 0;
             if (msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
@@ -315,12 +314,19 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
               cost: msg.total_cost_usd
             };
           }
+          handleStreamMessage(msg, sessionKey, onProgress);
         } catch {}
       }
 
-      // Flush remaining text only if no result (error/unexpected exit)
-      if (!finalResult) {
-        flushPendingTexts();
+      // Auto-retry with new session on "Prompt is too long"
+      const errorOutput = finalResult?.output || stderr || '';
+      if (!_retried && sessionId && errorOutput.includes('Prompt is too long')) {
+        console.log(`[${new Date().toISOString()}] 上下文超限，清除会话并重试`);
+        sessions.delete(sessionKey);
+        resetSessionUsage(sessionKey);
+        saveSessions();
+        resolve(callClaude(sessionKey, prompt, workDir, onProgress, true));
+        return;
       }
 
       if (finalResult) {
