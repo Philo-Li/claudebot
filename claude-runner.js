@@ -23,6 +23,7 @@ const { t } = require('./i18n.cjs');
 let claudePath = 'claude';
 let sessions = new Map();
 let runningProcesses = new Map();
+let sessionUsage = new Map();
 let sessionsFilePath = '';
 
 // ============== Path finders ==============
@@ -126,6 +127,45 @@ export function killAllProcesses() {
     } catch {}
   }
   runningProcesses.clear();
+}
+
+// ============== Session usage tracking ==============
+
+function updateSessionUsage(sessionKey, msg) {
+  const usage = msg.usage || {};
+  const contextTokens = (usage.input_tokens || 0)
+    + (usage.cache_creation_input_tokens || 0)
+    + (usage.cache_read_input_tokens || 0);
+
+  // Extract contextWindow from modelUsage
+  let contextWindow = 0;
+  if (msg.modelUsage) {
+    for (const model of Object.values(msg.modelUsage)) {
+      if (model.contextWindow) { contextWindow = model.contextWindow; break; }
+    }
+  }
+
+  const prev = sessionUsage.get(sessionKey) || {
+    totalCost: 0, totalInputTokens: 0, totalOutputTokens: 0,
+    contextTokens: 0, contextWindow: 0, turns: 0,
+  };
+
+  sessionUsage.set(sessionKey, {
+    totalCost: prev.totalCost + (msg.total_cost_usd || 0),
+    totalInputTokens: prev.totalInputTokens + (usage.input_tokens || 0),
+    totalOutputTokens: prev.totalOutputTokens + (usage.output_tokens || 0),
+    contextTokens,
+    contextWindow: contextWindow || prev.contextWindow,
+    turns: prev.turns + 1,
+  });
+}
+
+export function getSessionUsage(sessionKey) {
+  return sessionUsage.get(sessionKey) || null;
+}
+
+export function resetSessionUsage(sessionKey) {
+  sessionUsage.delete(sessionKey);
 }
 
 // ============== Stream message handler ==============
@@ -238,6 +278,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
             }
+            updateSessionUsage(sessionKey, msg);
             finalResult = {
               success: !msg.is_error,
               output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
@@ -267,6 +308,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
             }
+            updateSessionUsage(sessionKey, msg);
             finalResult = {
               success: !msg.is_error,
               output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),

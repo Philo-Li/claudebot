@@ -10,6 +10,8 @@ import {
   getRunningProcesses,
   killProcess,
   killAllProcesses,
+  getSessionUsage,
+  resetSessionUsage,
 } from './claude-runner.js';
 
 const require = createRequire(import.meta.url);
@@ -133,6 +135,16 @@ async function sendLongMessage(chatId, text, prefix = '') {
   }
 }
 
+// ============== 用量摘要 ==============
+function usageSuffix(chatId) {
+  const usage = getSessionUsage(chatId);
+  if (!usage) return '';
+  const pct = usage.contextWindow
+    ? (usage.contextTokens / usage.contextWindow * 100).toFixed(1)
+    : '?';
+  return `\n\n[usage] ctx ${usage.contextTokens.toLocaleString()}/${usage.contextWindow.toLocaleString()} (${pct}%) · out ${usage.totalOutputTokens.toLocaleString()}`;
+}
+
 // ============== 注册命令处理 ==============
 function registerHandlers() {
   const sessions = getSessions();
@@ -149,7 +161,28 @@ function registerHandlers() {
   bot.onText(/\/new/, (msg) => {
     if (!isAllowed(msg.from.id)) return;
     sessions.delete(msg.chat.id);
+    resetSessionUsage(msg.chat.id);
     bot.sendMessage(msg.chat.id, t('bot.newSession'));
+  });
+
+  bot.onText(/\/usage/, (msg) => {
+    if (!isAllowed(msg.from.id)) return;
+    const usage = getSessionUsage(msg.chat.id);
+    if (!usage) {
+      bot.sendMessage(msg.chat.id, t('bot.usageNone'));
+      return;
+    }
+    const pct = usage.contextWindow
+      ? (usage.contextTokens / usage.contextWindow * 100).toFixed(1)
+      : '?';
+    bot.sendMessage(msg.chat.id, t('bot.usageInfo', {
+      contextTokens: usage.contextTokens.toLocaleString(),
+      contextWindow: usage.contextWindow.toLocaleString(),
+      pct,
+      outputTokens: usage.totalOutputTokens.toLocaleString(),
+      cost: usage.totalCost.toFixed(4),
+      turns: usage.turns,
+    }));
   });
 
   bot.onText(/\/stop/, (msg) => {
@@ -208,8 +241,7 @@ function registerHandlers() {
     onProgress.finish();
 
     const prefix = result.success ? '' : '[error] ';
-    const suffix = '';
-    await sendLongMessage(chatId, result.output + suffix, prefix);
+    await sendLongMessage(chatId, result.output + usageSuffix(chatId), prefix);
   });
 
   bot.on('message', async (msg) => {
@@ -231,8 +263,7 @@ function registerHandlers() {
     onProgress.finish();
 
     const prefix = result.success ? '' : '[error] ';
-    const suffix = '';
-    await sendLongMessage(chatId, result.output + suffix, prefix);
+    await sendLongMessage(chatId, result.output + usageSuffix(chatId), prefix);
   });
 }
 
