@@ -221,7 +221,7 @@ function registerHandlers() {
     onProgress.finish();
 
     const prefix = result.success ? '' : '[error] ';
-    const suffix = result.cost ? `\n\n--- 费用: $${result.cost.toFixed(4)}` : '';
+    const suffix = '';
     await sendLongMessage(chatId, result.output + suffix, prefix);
   });
 
@@ -244,7 +244,7 @@ function registerHandlers() {
     onProgress.finish();
 
     const prefix = result.success ? '' : '[error] ';
-    const suffix = result.cost ? `\n\n--- 费用: $${result.cost.toFixed(4)}` : '';
+    const suffix = '';
     await sendLongMessage(chatId, result.output + suffix, prefix);
   });
 }
