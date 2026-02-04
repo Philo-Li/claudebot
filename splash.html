@@ -60,5 +60,11 @@
   <div class="title">ClaudeBot</div>
   <div class="spinner-track"><div class="spinner-bar"></div></div>
   <div class="status">正在启动...</div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('lang') === 'en') {
+      document.querySelector('.status').textContent = 'Starting...';
+    }
+  </script>
 </body>
 </html>

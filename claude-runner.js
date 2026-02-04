@@ -14,6 +14,10 @@
 
 import { spawn } from 'child_process';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { t } = require('./i18n.cjs');
 
 // ============== Module state ==============
 let claudePath = 'claude';
@@ -90,7 +94,7 @@ export function initRunner({ sessionsPath } = {}) {
 
   sessionsFilePath = sessionsPath || '';
   sessions = loadSessions();
-  console.log(`已加载 ${sessions.size} 个会话`);
+  console.log(t('runner.sessionsLoaded', { count: sessions.size }));
 
   runningProcesses = new Map();
 }
@@ -159,8 +163,7 @@ export function handleStreamMessage(msg, sessionKey, onProgress) {
 
         onProgress(desc);
       } else if (block.type === 'text' && block.text) {
-        const preview = block.text.slice(0, 500);
-        onProgress(preview + (block.text.length > 500 ? '...' : ''));
+        onProgress(block.text);
       }
     }
   }
@@ -216,7 +219,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
             }
             finalResult = {
               success: !msg.is_error,
-              output: msg.result || msg.errors?.join('\n') || '(无输出)',
+              output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
               cost: msg.total_cost_usd
             };
           }
@@ -244,7 +247,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
             }
             finalResult = {
               success: !msg.is_error,
-              output: msg.result || msg.errors?.join('\n') || '(无输出)',
+              output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
               cost: msg.total_cost_usd
             };
           }
@@ -256,14 +259,14 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
       } else {
         resolve({
           success: false,
-          output: stderr || '(无输出)'
+          output: stderr || t('runner.noOutput')
         });
       }
     });
 
     proc.on('error', (err) => {
       runningProcesses.delete(sessionKey);
-      resolve({ success: false, output: `执行错误: ${err.message}` });
+      resolve({ success: false, output: t('runner.execError', { message: err.message }) });
     });
   });
 }
