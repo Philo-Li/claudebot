@@ -201,6 +201,25 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
     let buffer = '';
     let finalResult = null;
 
+    // Buffer text blocks so only intermediate thinking is forwarded.
+    // When tool activity arrives, flush buffered text (it's intermediate).
+    // When result arrives, discard buffered text (it duplicates result.output).
+    const pendingTexts = [];
+    const flushPendingTexts = () => {
+      if (onProgress) {
+        for (const t of pendingTexts) onProgress(t);
+      }
+      pendingTexts.length = 0;
+    };
+    const bufferedProgress = onProgress ? (text) => {
+      if (text.startsWith('[tool:') || text === '[init]') {
+        flushPendingTexts();
+        onProgress(text);
+      } else {
+        pendingTexts.push(text);
+      }
+    } : null;
+
     proc.stdout.on('data', (data) => {
       buffer += data.toString();
 
@@ -213,6 +232,8 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
           const msg = JSON.parse(line);
 
           if (msg.type === 'result') {
+            // Discard buffered text — it duplicates result.output
+            pendingTexts.length = 0;
             if (msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
@@ -224,7 +245,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
             };
           }
 
-          handleStreamMessage(msg, sessionKey, onProgress);
+          handleStreamMessage(msg, sessionKey, bufferedProgress);
         } catch {}
       }
     });
@@ -241,6 +262,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
         try {
           const msg = JSON.parse(buffer);
           if (msg.type === 'result') {
+            pendingTexts.length = 0;
             if (msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
@@ -252,6 +274,11 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress) {
             };
           }
         } catch {}
+      }
+
+      // Flush remaining text only if no result (error/unexpected exit)
+      if (!finalResult) {
+        flushPendingTexts();
       }
 
       if (finalResult) {
