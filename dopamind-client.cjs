@@ -120,15 +120,26 @@ async function processMessage(config, msg) {
     }
     await flushProgress();
 
+    // Append usage suffix to response
+    let response = result.output;
+    if (result.success) {
+      const usage = claudeRunner.getSessionUsage(sessionKey);
+      if (usage && usage.contextWindow) {
+        const remaining = (100 - usage.contextTokens / usage.contextWindow * 100).toFixed(0);
+        response += `\n[context] ${remaining}% remaining`;
+      }
+    }
+
     // Submit result
     await request('POST', `${config.apiUrl}/api/desktop-queue/respond`, config.token, {
       messageId: msg.id,
-      response: result.output,
+      response,
       success: result.success,
       cost: result.cost || undefined,
+      errorMessage: result.success ? undefined : result.output,
     });
 
-    console.log(`[Dopamind] Message ${msg.id} completed (success=${result.success})`);
+    console.log(`[Dopamind] Message ${msg.id} completed (success=${result.success})${result.success ? '' : ' output=' + (result.output || '').slice(0, 200)}`);
   } catch (err) {
     console.error(`[Dopamind] Message ${msg.id} error:`, err.message);
 
