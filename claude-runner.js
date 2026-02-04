@@ -235,7 +235,12 @@ export function handleStreamMessage(msg, sessionKey, onProgress) {
 
 // ============== Call Claude ==============
 
-export async function callClaude(sessionKey, prompt, workDir, onProgress, _retried) {
+const MAX_API_RETRIES = 2;
+const API_RETRY_DELAY = 5000;
+const API_RETRY_PATTERN = /API Error: 5\d{2}\b|"type":"api_error"|overloaded/;
+
+export async function callClaude(sessionKey, prompt, workDir, onProgress, _retryState) {
+  const retryState = _retryState || { contextRetried: false, apiRetries: 0 };
   return new Promise((resolve) => {
     const sessionId = sessions.get(sessionKey);
     const args = [
@@ -331,14 +336,26 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retri
         } catch {}
       }
 
-      // Auto-retry with new session on "Prompt is too long"
       const errorOutput = finalResult?.output || stderr || '';
-      if (!_retried && sessionId && errorOutput.includes('Prompt is too long')) {
+
+      // Auto-retry with new session on "Prompt is too long"
+      if (!retryState.contextRetried && sessionId && errorOutput.includes('Prompt is too long')) {
         console.log(`[${new Date().toISOString()}] 上下文超限，清除会话并重试`);
         sessions.delete(sessionKey);
         resetSessionUsage(sessionKey);
         saveSessions();
-        resolve(callClaude(sessionKey, prompt, workDir, onProgress, true));
+        resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...retryState, contextRetried: true }));
+        return;
+      }
+
+      // Auto-retry on API 5xx / overloaded errors
+      if (!finalResult?.success && retryState.apiRetries < MAX_API_RETRIES && API_RETRY_PATTERN.test(errorOutput)) {
+        const attempt = retryState.apiRetries + 1;
+        console.log(`[${new Date().toISOString()}] API 错误，${API_RETRY_DELAY / 1000}s 后重试 (${attempt}/${MAX_API_RETRIES})`);
+        if (onProgress) onProgress(`[status:processing] retry ${attempt}/${MAX_API_RETRIES}...`);
+        setTimeout(() => {
+          resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...retryState, apiRetries: attempt }));
+        }, API_RETRY_DELAY);
         return;
       }
 

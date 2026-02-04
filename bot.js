@@ -60,6 +60,51 @@ function saveSessions() {
 }
 
 // ============== 进度更新 ==============
+const MAX_VISIBLE_TOOLS = 5;
+const TOOL_TAG_RE = /^\[tool:/;
+const TEXT_TAG_RE = /^\[text\]/;
+
+function buildProgressDisplay(steps) {
+  const toolSteps = [];
+  const otherSteps = [];
+  for (const s of steps) {
+    if (TOOL_TAG_RE.test(s)) {
+      toolSteps.push(s);
+    } else if (!TEXT_TAG_RE.test(s)) {
+      // Keep non-tool, non-text steps (e.g. [init], [status:processing] retry)
+      otherSteps.push(s);
+    }
+    // [text] steps are skipped during processing display
+  }
+
+  const lines = [...otherSteps];
+  if (toolSteps.length > MAX_VISIBLE_TOOLS) {
+    lines.push(`... ${toolSteps.length - MAX_VISIBLE_TOOLS} more tools`);
+    lines.push(...toolSteps.slice(-MAX_VISIBLE_TOOLS));
+  } else {
+    lines.push(...toolSteps);
+  }
+  return lines.join('\n');
+}
+
+function buildFinishDisplay(steps) {
+  let toolCount = 0;
+  const textLines = [];
+  for (const s of steps) {
+    if (TOOL_TAG_RE.test(s)) {
+      toolCount++;
+    } else if (TEXT_TAG_RE.test(s)) {
+      // Keep [text] content for final display
+      textLines.push(s.replace(TEXT_TAG_RE, '').trim());
+    }
+    // skip [init], [status:*] etc.
+  }
+  const lines = [];
+  if (toolCount > 0) lines.push(`[status:done] Used ${toolCount} tools`);
+  if (textLines.length > 0) lines.push(...textLines);
+  return lines.join('\n');
+}
+
 function createProgressUpdater(chatId, messageId) {
   let lastUpdate = 0;
   let lastText = '';
@@ -67,7 +112,7 @@ function createProgressUpdater(chatId, messageId) {
   let pendingFlush = null;
 
   const flush = () => {
-    const display = steps.join('\n');
+    const display = buildProgressDisplay(steps);
     const trimmed = display.length > 3800
       ? '...\n' + display.slice(display.length - 3800)
       : display;
@@ -98,13 +143,13 @@ function createProgressUpdater(chatId, messageId) {
   updater.finish = () => {
     if (pendingFlush) { clearTimeout(pendingFlush); pendingFlush = null; }
     if (steps.length === 0) return;
-    const display = steps.join('\n');
+    const display = buildFinishDisplay(steps);
+    if (!display) return;
     const trimmed = display.length > 3800
       ? '...\n' + display.slice(display.length - 3800)
       : display;
-    const finalText = `[status:done]\n\n${trimmed}`;
-    if (finalText !== lastText) {
-      bot.editMessageText(finalText, { chat_id: chatId, message_id: messageId })
+    if (trimmed !== lastText) {
+      bot.editMessageText(trimmed, { chat_id: chatId, message_id: messageId })
         .catch(() => {});
     }
   };
@@ -138,11 +183,9 @@ async function sendLongMessage(chatId, text, prefix = '') {
 // ============== 用量摘要 ==============
 function usageSuffix(chatId) {
   const usage = getSessionUsage(chatId);
-  if (!usage) return '';
-  const pct = usage.contextWindow
-    ? (usage.contextTokens / usage.contextWindow * 100).toFixed(1)
-    : '?';
-  return `\n\n[usage] ctx ${usage.contextTokens.toLocaleString()}/${usage.contextWindow.toLocaleString()} (${pct}%) · out ${usage.totalOutputTokens.toLocaleString()}`;
+  if (!usage || !usage.contextWindow) return '';
+  const remaining = (100 - usage.contextTokens / usage.contextWindow * 100).toFixed(0);
+  return `\n\n[context] ${remaining}% remaining`;
 }
 
 // ============== 注册命令处理 ==============
