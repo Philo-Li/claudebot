@@ -131,11 +131,15 @@ export function killAllProcesses() {
 
 // ============== Session usage tracking ==============
 
-function updateSessionUsage(sessionKey, msg) {
+function updateSessionUsage(sessionKey, msg, lastAssistantUsage) {
   const usage = msg.usage || {};
-  const contextTokens = (usage.input_tokens || 0)
-    + (usage.cache_creation_input_tokens || 0)
-    + (usage.cache_read_input_tokens || 0);
+
+  // Use last assistant message's usage for context size (not the aggregate total)
+  // The result message's usage is cumulative across all API turns, which is misleading
+  const au = lastAssistantUsage || {};
+  const contextTokens = (au.input_tokens || 0)
+    + (au.cache_creation_input_tokens || 0)
+    + (au.cache_read_input_tokens || 0);
 
   // Extract contextWindow from modelUsage
   let contextWindow = 0;
@@ -261,6 +265,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retri
     let stderr = '';
     let buffer = '';
     let finalResult = null;
+    let lastAssistantUsage = null;
 
     proc.stdout.on('data', (data) => {
       buffer += data.toString();
@@ -273,12 +278,17 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retri
         try {
           const msg = JSON.parse(line);
 
+          // Track per-turn usage from assistant messages (actual context size)
+          if (msg.type === 'assistant' && msg.message?.usage) {
+            lastAssistantUsage = msg.message.usage;
+          }
+
           if (msg.type === 'result') {
             if (msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
             }
-            updateSessionUsage(sessionKey, msg);
+            updateSessionUsage(sessionKey, msg, lastAssistantUsage);
             finalResult = {
               success: !msg.is_error,
               output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
@@ -302,12 +312,15 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retri
       if (buffer.trim()) {
         try {
           const msg = JSON.parse(buffer);
+          if (msg.type === 'assistant' && msg.message?.usage) {
+            lastAssistantUsage = msg.message.usage;
+          }
           if (msg.type === 'result') {
             if (msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
             }
-            updateSessionUsage(sessionKey, msg);
+            updateSessionUsage(sessionKey, msg, lastAssistantUsage);
             finalResult = {
               success: !msg.is_error,
               output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
