@@ -14,6 +14,7 @@ let botRunning = false;
 let dopamindClient = null;
 let dopamindRunning = false;
 let configWindow = null;
+let splashWindow = null;
 
 const userDataPath = app.getPath('userData');
 const envPath = path.join(userDataPath, '.env');
@@ -91,6 +92,7 @@ async function startBot() {
   try {
     // Ensure .env exists
     if (!fs.existsSync(envPath)) {
+      closeSplash();
       showConfigWindow();
       return;
     }
@@ -133,10 +135,12 @@ async function startBot() {
     }
 
     if (!hasTelegram && !hasDopamind) {
+      closeSplash();
       showConfigWindow();
       return;
     }
   } catch (err) {
+    closeSplash();
     console.error('Failed to start:', err);
     dialog.showErrorBox('Start Failed', err.message);
     botRunning = false;
@@ -272,7 +276,36 @@ ipcMain.handle('select-directory', async () => {
   return result.filePaths[0];
 });
 
-app.whenReady().then(() => {
+function showSplash() {
+  splashWindow = new BrowserWindow({
+    width: 300,
+    height: 220,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    center: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  splashWindow.on('closed', () => { splashWindow = null; });
+}
+
+function closeSplash() {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close();
+    splashWindow = null;
+  }
+}
+
+app.whenReady().then(async () => {
+  // Show splash immediately for user feedback
+  showSplash();
+
   // Hide dock icon on macOS (tray-only app)
   if (process.platform === 'darwin') {
     app.dock.hide();
@@ -281,13 +314,11 @@ app.whenReady().then(() => {
   tray = new Tray(createTrayIcon(false));
   updateTray();
 
-  // Auto-start bot if config exists
-  if (fs.existsSync(envPath)) {
-    startBot();
-  } else {
-    // First run — show setup
-    startBot();
-  }
+  // Auto-start bot
+  await startBot();
+
+  // Close splash after startup completes
+  closeSplash();
 });
 
 // Keep app running when all windows are closed (tray-only)
