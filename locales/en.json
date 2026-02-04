@@ -4,7 +4,7 @@
   "runner.sessionsLoaded": "Loaded {count} session(s)",
 
   "bot.noPermission": "Sorry, you don't have permission to use this bot.",
-  "bot.startMessage": "Claude Code Telegram Bot\n\nCommands:\n/ask <question> - Ask Claude a question\n/run <instruction> - Have Claude execute a task\n/new - Start a new session (clear context)\n/stop - Stop the current task\n/dir - View current working directory\n/setdir <path> - Set working directory\n/status - View status\n\nPlain messages are also sent to Claude as instructions.\nConsecutive messages maintain context automatically. Use /new to reset.\n\nCurrent working directory: {workDir}",
+  "bot.startMessage": "Claude Code Telegram Bot\n\nCommands:\n/ask <question> - Ask Claude a question\n/run <instruction> - Have Claude execute a task\n/new - Start a new session (clear context)\n/stop - Stop the current task\n/dir - View current working directory\n/setdir <path> - Set working directory\n/status - View status\n/usage - View session token usage\n\nPlain messages are also sent to Claude as instructions.\nConsecutive messages maintain context automatically. Use /new to reset.\n\nCurrent working directory: {workDir}",
   "bot.newSession": "New session started.",
   "bot.stopped": "Current task stopped.",
   "bot.noRunningTask": "No task is currently running.",
@@ -25,6 +25,8 @@
   "bot.startFailed": "Start failed:",
   "bot.tokenRequired": "Please set TELEGRAM_BOT_TOKEN",
   "bot.noUserIdsWarning": "Warning: ALLOWED_USER_IDS not set, anyone can use this bot!",
+  "bot.usageNone": "No usage data for current session (no messages sent yet).",
+  "bot.usageInfo": "Session usage:\n- Context: {contextTokens} / {contextWindow} tokens ({pct}%)\n- Output: {outputTokens} tokens\n- Cost: ${cost}\n- Turns: {turns}",
 
   "tray.status": "Status: {status}",
   "tray.startBot": "Start Bot",

@@ -4,7 +4,7 @@
   "runner.sessionsLoaded": "已加载 {count} 个会话",
 
   "bot.noPermission": "抱歉，你没有权限使用此 Bot。",
-  "bot.startMessage": "Claude Code Telegram Bot\n\n命令:\n/ask <问题> - 向 Claude 提问\n/run <指令> - 让 Claude 执行任务\n/new - 开始新会话（清除上下文）\n/stop - 停止当前任务\n/dir - 查看当前工作目录\n/setdir <路径> - 设置工作目录\n/status - 查看状态\n\n直接发送消息也会被当作指令发送给 Claude。\n连续对话会自动保持上下文，使用 /new 重置。\n\n当前工作目录: {workDir}",
+  "bot.startMessage": "Claude Code Telegram Bot\n\n命令:\n/ask <问题> - 向 Claude 提问\n/run <指令> - 让 Claude 执行任务\n/new - 开始新会话（清除上下文）\n/stop - 停止当前任务\n/dir - 查看当前工作目录\n/setdir <路径> - 设置工作目录\n/status - 查看状态\n/usage - 查看会话 Token 用量\n\n直接发送消息也会被当作指令发送给 Claude。\n连续对话会自动保持上下文，使用 /new 重置。\n\n当前工作目录: {workDir}",
   "bot.newSession": "已开始新会话。",
   "bot.stopped": "已停止当前任务。",
   "bot.noRunningTask": "当前没有运行中的任务。",
@@ -25,6 +25,8 @@
   "bot.startFailed": "启动失败:",
   "bot.tokenRequired": "请设置 TELEGRAM_BOT_TOKEN",
   "bot.noUserIdsWarning": "警告: 未设置 ALLOWED_USER_IDS，任何人都可以使用此 Bot！",
+  "bot.usageNone": "当前会话无用量数据（尚未发送过消息）。",
+  "bot.usageInfo": "会话用量:\n- 上下文: {contextTokens} / {contextWindow} tokens ({pct}%)\n- 输出: {outputTokens} tokens\n- 费用: ${cost}\n- 轮次: {turns}",
 
   "tray.status": "状态: {status}",
   "tray.startBot": "启动 Bot",
