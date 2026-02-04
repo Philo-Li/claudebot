@@ -65,7 +65,7 @@ function createProgressUpdater(chatId, messageId) {
     const trimmed = display.length > 3800
       ? '...\n' + display.slice(display.length - 3800)
       : display;
-    const newText = `正在处理...\n\n${trimmed}`;
+    const newText = `[status:processing]\n\n${trimmed}`;
     if (newText === lastText) return;
 
     lastText = newText;
@@ -91,8 +91,16 @@ function createProgressUpdater(chatId, messageId) {
 
   updater.finish = () => {
     if (pendingFlush) { clearTimeout(pendingFlush); pendingFlush = null; }
-    bot.editMessageText('已完成。', { chat_id: chatId, message_id: messageId })
-      .catch(() => {});
+    if (steps.length === 0) return;
+    const display = steps.join('\n');
+    const trimmed = display.length > 3800
+      ? '...\n' + display.slice(display.length - 3800)
+      : display;
+    const finalText = `[status:done]\n\n${trimmed}`;
+    if (finalText !== lastText) {
+      bot.editMessageText(finalText, { chat_id: chatId, message_id: messageId })
+        .catch(() => {});
+    }
   };
 
   return updater;
@@ -206,13 +214,13 @@ function registerHandlers() {
     }
 
     const prompt = match[2].trim();
-    const statusMsg = await bot.sendMessage(chatId, '正在处理...');
+    const statusMsg = await bot.sendMessage(chatId, '[status:processing]');
     const onProgress = createProgressUpdater(chatId, statusMsg.message_id);
 
     const result = await callClaude(chatId, prompt, config.workDir, onProgress);
     onProgress.finish();
 
-    const prefix = result.success ? '' : '[错误] ';
+    const prefix = result.success ? '' : '[error] ';
     const suffix = result.cost ? `\n\n--- 费用: $${result.cost.toFixed(4)}` : '';
     await sendLongMessage(chatId, result.output + suffix, prefix);
   });
@@ -229,13 +237,13 @@ function registerHandlers() {
       return;
     }
 
-    const statusMsg = await bot.sendMessage(chatId, '正在处理...');
+    const statusMsg = await bot.sendMessage(chatId, '[status:processing]');
     const onProgress = createProgressUpdater(chatId, statusMsg.message_id);
 
     const result = await callClaude(chatId, msg.text.trim(), config.workDir, onProgress);
     onProgress.finish();
 
-    const prefix = result.success ? '' : '[错误] ';
+    const prefix = result.success ? '' : '[error] ';
     const suffix = result.cost ? `\n\n--- 费用: $${result.cost.toFixed(4)}` : '';
     await sendLongMessage(chatId, result.output + suffix, prefix);
   });

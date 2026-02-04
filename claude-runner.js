@@ -130,7 +130,7 @@ export function handleStreamMessage(msg, sessionKey, onProgress) {
   if (!onProgress) return;
 
   if (msg.type === 'system') {
-    onProgress('正在初始化...');
+    onProgress('[init]');
   } else if (msg.type === 'assistant' && msg.message?.content) {
     for (const block of msg.message.content) {
       if (block.type === 'tool_use') {
@@ -139,22 +139,22 @@ export function handleStreamMessage(msg, sessionKey, onProgress) {
         let desc = '';
 
         if (toolName === 'Read') {
-          desc = `读取文件: ${input.file_path || ''}`;
+          desc = `[tool:read] ${input.file_path || ''}`;
         } else if (toolName === 'Edit') {
-          desc = `编辑文件: ${input.file_path || ''}`;
+          desc = `[tool:edit] ${input.file_path || ''}`;
         } else if (toolName === 'Write') {
-          desc = `写入文件: ${input.file_path || ''}`;
+          desc = `[tool:write] ${input.file_path || ''}`;
         } else if (toolName === 'Bash') {
           const cmd = input.command || '';
-          desc = `执行命令: ${cmd.slice(0, 80)}${cmd.length > 80 ? '...' : ''}`;
+          desc = `[tool:bash] ${cmd.slice(0, 80)}${cmd.length > 80 ? '...' : ''}`;
         } else if (toolName === 'Glob') {
-          desc = `搜索文件: ${input.pattern || ''}`;
+          desc = `[tool:glob] ${input.pattern || ''}`;
         } else if (toolName === 'Grep') {
-          desc = `搜索内容: ${input.pattern || ''}`;
+          desc = `[tool:grep] ${input.pattern || ''}`;
         } else if (toolName === 'Task') {
-          desc = `子任务: ${input.description || ''}`;
+          desc = `[tool:task] ${input.description || ''}`;
         } else {
-          desc = `工具调用: ${toolName}`;
+          desc = `[tool:${toolName.toLowerCase()}]`;
         }
 
         onProgress(desc);
