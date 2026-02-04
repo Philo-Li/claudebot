@@ -2,6 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { createRequire } from 'module';
 import {
   initRunner,
   callClaude,
@@ -10,6 +11,9 @@ import {
   killProcess,
   killAllProcesses,
 } from './claude-runner.js';
+
+const require = createRequire(import.meta.url);
+const { t, setLanguage } = require('./i18n.cjs');
 
 // ============== 模块级变量 ==============
 let bot = null;
@@ -33,11 +37,11 @@ function loadConfig(envPath) {
   const workDir = process.env.WORK_DIR || process.cwd();
 
   if (!token) {
-    throw new Error('请设置 TELEGRAM_BOT_TOKEN');
+    throw new Error(t('bot.tokenRequired'));
   }
 
   if (allowedUsers.length === 0) {
-    console.warn('警告: 未设置 ALLOWED_USER_IDS，任何人都可以使用此 Bot！');
+    console.warn(t('bot.noUserIdsWarning'));
   }
 
   return { token, allowedUsers, workDir };
@@ -136,46 +140,30 @@ function registerHandlers() {
 
   bot.onText(/\/start/, (msg) => {
     if (!isAllowed(msg.from.id)) {
-      bot.sendMessage(msg.chat.id, '抱歉，你没有权限使用此 Bot。');
+      bot.sendMessage(msg.chat.id, t('bot.noPermission'));
       return;
     }
-    bot.sendMessage(msg.chat.id,
-`Claude Code Telegram Bot
-
-命令:
-/ask <问题> - 向 Claude 提问
-/run <指令> - 让 Claude 执行任务
-/new - 开始新会话（清除上下文）
-/stop - 停止当前任务
-/dir - 查看当前工作目录
-/setdir <路径> - 设置工作目录
-/status - 查看状态
-
-直接发送消息也会被当作指令发送给 Claude。
-连续对话会自动保持上下文，使用 /new 重置。
-
-当前工作目录: ${config.workDir}`
-    );
+    bot.sendMessage(msg.chat.id, t('bot.startMessage', { workDir: config.workDir }));
   });
 
   bot.onText(/\/new/, (msg) => {
     if (!isAllowed(msg.from.id)) return;
     sessions.delete(msg.chat.id);
-    bot.sendMessage(msg.chat.id, '已开始新会话。');
+    bot.sendMessage(msg.chat.id, t('bot.newSession'));
   });
 
   bot.onText(/\/stop/, (msg) => {
     if (!isAllowed(msg.from.id)) return;
     if (killProcess(msg.chat.id)) {
-      bot.sendMessage(msg.chat.id, '已停止当前任务。');
+      bot.sendMessage(msg.chat.id, t('bot.stopped'));
     } else {
-      bot.sendMessage(msg.chat.id, '当前没有运行中的任务。');
+      bot.sendMessage(msg.chat.id, t('bot.noRunningTask'));
     }
   });
 
   bot.onText(/\/dir$/, (msg) => {
     if (!isAllowed(msg.from.id)) return;
-    bot.sendMessage(msg.chat.id, `当前工作目录: ${config.workDir}`);
+    bot.sendMessage(msg.chat.id, t('bot.currentWorkDir', { dir: config.workDir }));
   });
 
   bot.onText(/\/setdir (.+)/, (msg, match) => {
@@ -183,9 +171,9 @@ function registerHandlers() {
     const newDir = match[1].trim();
     if (existsSync(newDir)) {
       config.workDir = newDir;
-      bot.sendMessage(msg.chat.id, `工作目录已设置为: ${newDir}`);
+      bot.sendMessage(msg.chat.id, t('bot.workDirSet', { dir: newDir }));
     } else {
-      bot.sendMessage(msg.chat.id, `目录不存在: ${newDir}`);
+      bot.sendMessage(msg.chat.id, t('bot.dirNotExist', { dir: newDir }));
     }
   });
 
@@ -193,23 +181,22 @@ function registerHandlers() {
     if (!isAllowed(msg.from.id)) return;
     const isRunning = runningProcesses.has(msg.chat.id);
     const sessionId = sessions.get(msg.chat.id);
-    bot.sendMessage(msg.chat.id,
-`状态:
-- 工作目录: ${config.workDir}
-- 任务状态: ${isRunning ? '运行中' : '空闲'}
-- 会话: ${sessionId ? sessionId.slice(0, 8) + '...' : '无（下次消息将开始新会话）'}
-- 你的用户 ID: ${msg.from.id}`
-    );
+    bot.sendMessage(msg.chat.id, t('bot.status', {
+      workDir: config.workDir,
+      taskStatus: isRunning ? t('bot.statusRunning') : t('bot.statusIdle'),
+      session: sessionId ? sessionId.slice(0, 8) + '...' : t('bot.sessionNone'),
+      userId: msg.from.id,
+    }));
   });
 
   bot.onText(/\/(ask|run) ([\s\S]+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     if (!isAllowed(msg.from.id)) {
-      bot.sendMessage(chatId, '抱歉，你没有权限使用此 Bot。');
+      bot.sendMessage(chatId, t('bot.noPermission'));
       return;
     }
     if (runningProcesses.has(chatId)) {
-      bot.sendMessage(chatId, '已有任务在运行中，请等待完成或使用 /stop 停止。');
+      bot.sendMessage(chatId, t('bot.taskRunning'));
       return;
     }
 
@@ -229,11 +216,11 @@ function registerHandlers() {
     if (msg.text?.startsWith('/') || !msg.text) return;
     const chatId = msg.chat.id;
     if (!isAllowed(msg.from.id)) {
-      bot.sendMessage(chatId, '抱歉，你没有权限使用此 Bot。');
+      bot.sendMessage(chatId, t('bot.noPermission'));
       return;
     }
     if (runningProcesses.has(chatId)) {
-      bot.sendMessage(chatId, '已有任务在运行中，请等待完成或使用 /stop 停止。');
+      bot.sendMessage(chatId, t('bot.taskRunning'));
       return;
     }
 
@@ -262,14 +249,14 @@ export async function start({ envPath, sessionsPath } = {}) {
   registerHandlers();
 
   console.log('========================================');
-  console.log('Claude Code Telegram Bot 已启动');
-  console.log(`工作目录: ${config.workDir}`);
-  console.log(`授权用户: ${config.allowedUsers.length > 0 ? config.allowedUsers.join(', ') : '所有人'}`);
+  console.log(t('bot.started'));
+  console.log(t('bot.workDir', { dir: config.workDir }));
+  console.log(t('bot.authorizedUsers', { users: config.allowedUsers.length > 0 ? config.allowedUsers.join(', ') : t('bot.allUsers') }));
   console.log('========================================');
 }
 
 export async function stop() {
-  console.log('正在停止 Bot...');
+  console.log(t('bot.stopping'));
 
   // 杀死所有运行中的子进程
   killAllProcesses();
@@ -280,7 +267,7 @@ export async function stop() {
     bot = null;
   }
 
-  console.log('Bot 已停止。');
+  console.log(t('bot.stoppedLog'));
 }
 
 // ============== 直接运行兼容 ==============
@@ -291,8 +278,12 @@ const isDirectRun = process.argv[1] && (
 );
 
 if (isDirectRun) {
+  // Set language from env when running standalone
+  if (process.env.LANGUAGE === 'en' || process.env.LANGUAGE === 'zh') {
+    setLanguage(process.env.LANGUAGE);
+  }
   start().catch(err => {
-    console.error('启动失败:', err.message);
+    console.error(t('bot.startFailed'), err.message);
     process.exit(1);
   });
 }

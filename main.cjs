@@ -2,6 +2,7 @@ const { app, Tray, Menu, dialog, shell, nativeImage, BrowserWindow, ipcMain } = 
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
+const { t, setLanguage, getLanguage } = require('./i18n.cjs');
 
 // Prevent multiple instances
 const gotLock = app.requestSingleInstanceLock();
@@ -44,43 +45,62 @@ function updateTray() {
   if (botRunning) statusParts.push('Telegram');
   if (dopamindRunning) statusParts.push('Dopamind');
   const statusText = statusParts.length > 0
-    ? `Running (${statusParts.join(' + ')})`
-    : 'Stopped';
+    ? t('tray.running', { services: statusParts.join(' + ') })
+    : t('tray.stopped');
 
   tray.setToolTip(`ClaudeBot - ${statusText}`);
 
+  const currentLang = getLanguage();
+
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: `Status: ${statusText}`,
+      label: t('tray.status', { status: statusText }),
       enabled: false,
     },
     { type: 'separator' },
     {
-      label: 'Start Bot',
+      label: t('tray.startBot'),
       enabled: !botRunning && !dopamindRunning,
       click: startBot,
     },
     {
-      label: 'Stop Bot',
+      label: t('tray.stopBot'),
       enabled: botRunning || dopamindRunning,
       click: stopBot,
     },
     { type: 'separator' },
     {
-      label: '设置',
+      label: t('tray.language'),
+      submenu: [
+        {
+          label: '中文',
+          type: 'radio',
+          checked: currentLang === 'zh',
+          click: () => switchLanguage('zh'),
+        },
+        {
+          label: 'English',
+          type: 'radio',
+          checked: currentLang === 'en',
+          click: () => switchLanguage('en'),
+        },
+      ],
+    },
+    {
+      label: t('tray.settings'),
       click: showConfigWindow,
     },
     {
-      label: 'Check for Updates',
+      label: t('tray.checkUpdates'),
       click: () => autoUpdater.checkForUpdatesAndNotify(),
     },
     {
-      label: 'Open Data Folder',
+      label: t('tray.openDataFolder'),
       click: () => shell.openPath(userDataPath),
     },
     { type: 'separator' },
     {
-      label: 'Quit',
+      label: t('tray.quit'),
       click: async () => {
         await stopBot();
         app.quit();
@@ -89,6 +109,15 @@ function updateTray() {
   ]);
 
   tray.setContextMenu(contextMenu);
+}
+
+function switchLanguage(lang) {
+  setLanguage(lang);
+  // Persist to .env
+  const envConfig = parseEnvFile();
+  envConfig.language = lang;
+  writeEnvFile(envConfig);
+  updateTray();
 }
 
 async function startBot() {
@@ -103,6 +132,11 @@ async function startBot() {
     }
 
     const envConfig = parseEnvFile();
+
+    // Apply language setting
+    if (envConfig.language) {
+      setLanguage(envConfig.language);
+    }
 
     // Start Telegram bot if token is configured
     const hasTelegram = !!envConfig.token;
@@ -147,7 +181,7 @@ async function startBot() {
   } catch (err) {
     closeSplash();
     console.error('Failed to start:', err);
-    dialog.showErrorBox('Start Failed', err.message);
+    dialog.showErrorBox(t('dialog.startFailed'), err.message);
     botRunning = false;
     dopamindRunning = false;
   }
@@ -189,6 +223,7 @@ function parseEnvFile() {
     dopamindEnabled: '',
     dopamindApiUrl: '',
     dopamindToken: '',
+    language: '',
   };
   if (!fs.existsSync(envPath)) return result;
   const content = fs.readFileSync(envPath, 'utf-8');
@@ -205,11 +240,12 @@ function parseEnvFile() {
     else if (key === 'DOPAMIND_ENABLED') result.dopamindEnabled = val;
     else if (key === 'DOPAMIND_API_URL') result.dopamindApiUrl = val;
     else if (key === 'DOPAMIND_TOKEN') result.dopamindToken = val;
+    else if (key === 'LANGUAGE') result.language = val;
   }
   return result;
 }
 
-function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken }) {
+function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken, language }) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -223,6 +259,9 @@ function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken 
     '# Dopamind Integration',
     `DOPAMIND_ENABLED=${dopamindEnabled || 'false'}`,
     `DOPAMIND_TOKEN=${dopamindToken || ''}`,
+    '',
+    '# Language (zh / en)',
+    `LANGUAGE=${language || 'zh'}`,
   ].join('\n');
   fs.writeFileSync(envPath, content);
 }
@@ -240,7 +279,7 @@ function showConfigWindow() {
     maximizable: false,
     minimizable: false,
     fullscreenable: false,
-    title: '设置',
+    title: t('tray.settings'),
     webPreferences: {
       preload: path.join(__dirname, 'preload-config.cjs'),
       contextIsolation: true,
@@ -272,6 +311,13 @@ ipcMain.handle('save-config', async (_event, data) => {
   startBot();
 });
 
+ipcMain.handle('get-locale', () => {
+  const lang = getLanguage();
+  const localesDir = path.join(__dirname, 'locales');
+  const data = JSON.parse(fs.readFileSync(path.join(localesDir, `${lang}.json`), 'utf-8'));
+  return { lang, strings: data };
+});
+
 ipcMain.handle('select-directory', async () => {
   const parent = configWindow || null;
   const result = await dialog.showOpenDialog(parent, {
@@ -296,7 +342,10 @@ function showSplash() {
       nodeIntegration: false,
     },
   });
-  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  // Read language early for splash (env may exist before startBot)
+  const envConfig = parseEnvFile();
+  const splashLang = envConfig.language || 'zh';
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'), { query: { lang: splashLang } });
   splashWindow.on('closed', () => { splashWindow = null; });
 }
 
@@ -318,9 +367,9 @@ function setupAutoUpdater() {
   autoUpdater.on('update-downloaded', (info) => {
     dialog.showMessageBox({
       type: 'info',
-      title: '更新就绪',
-      message: `新版本 ${info.version} 已下载完成，是否立即重启安装？`,
-      buttons: ['立即重启', '稍后'],
+      title: t('update.ready'),
+      message: t('update.message', { version: info.version }),
+      buttons: [t('update.restartNow'), t('update.later')],
       defaultId: 0,
       cancelId: 1,
     }).then(({ response }) => {
@@ -370,7 +419,7 @@ app.on('second-instance', () => {
     dialog.showMessageBox({
       type: 'info',
       title: 'ClaudeBot',
-      message: 'ClaudeBot is already running in the system tray.',
+      message: t('dialog.alreadyRunning'),
       buttons: ['OK'],
     });
   }
