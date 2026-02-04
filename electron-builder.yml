@@ -2,6 +2,11 @@ appId: com.claudebot.telegram
 productName: ClaudeBot
 copyright: Copyright © 2024
 
+publish:
+  provider: github
+  owner: Philo-Li
+  repo: claudebot
+
 directories:
   output: dist
 
@@ -11,6 +16,10 @@ files:
   - "!.env"
   - "!.env.example"
   - "!fix-modules.cjs"
+  - "!delete-nul.cjs"
+  - "!find-missing.cjs"
+  - "!prod-deps.txt"
+  - "!nul"
 
 afterPack: ./fix-modules.cjs
 

@@ -1,4 +1,5 @@
 const { app, Tray, Menu, dialog, shell, nativeImage, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
@@ -68,6 +69,10 @@ function updateTray() {
     {
       label: '设置',
       click: showConfigWindow,
+    },
+    {
+      label: 'Check for Updates',
+      click: () => autoUpdater.checkForUpdatesAndNotify(),
     },
     {
       label: 'Open Data Folder',
@@ -302,6 +307,34 @@ function closeSplash() {
   }
 }
 
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info.version);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '更新就绪',
+      message: `新版本 ${info.version} 已下载完成，是否立即重启安装？`,
+      buttons: ['立即重启', '稍后'],
+      defaultId: 0,
+      cancelId: 1,
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Auto-update error:', err);
+  });
+}
+
 app.whenReady().then(async () => {
   // Show splash immediately for user feedback
   showSplash();
@@ -319,6 +352,10 @@ app.whenReady().then(async () => {
 
   // Close splash after startup completes
   closeSplash();
+
+  // Setup and check for updates
+  setupAutoUpdater();
+  autoUpdater.checkForUpdatesAndNotify();
 });
 
 // Keep app running when all windows are closed (tray-only)
