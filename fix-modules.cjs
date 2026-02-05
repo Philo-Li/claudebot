@@ -33,7 +33,13 @@ module.exports = async function (context) {
       const src = path.join(srcNodeModules, mod);
       const dest = path.join(appNodeModules, mod);
       if (fs.existsSync(src)) {
-        fs.cpSync(src, dest, { recursive: true });
+        fs.cpSync(src, dest, {
+          recursive: true,
+          dereference: true,
+          filter: (s, d) => {
+            try { return fs.realpathSync(s) !== fs.realpathSync(d); } catch { return true; }
+          },
+        });
         console.log(`  \u2022 copied missing module: ${mod}`);
         copied++;
       }
