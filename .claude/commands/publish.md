@@ -18,27 +18,73 @@ Build the app and publish a new version to GitHub Releases for auto-update.
 
 2. Read current version from `package.json`.
 
-3. Check the latest GitHub release tag:
+3. Get the latest git tag to determine the last release:
    ```bash
-   gh release list --limit 1
+   git describe --tags --abbrev=0
    ```
 
-### Step 2: Version Bump
+### Step 2: Generate Changelog
 
-Ask the user what kind of release this is:
-- **patch** (bug fixes): e.g. 1.0.0 → 1.0.1
-- **minor** (new features): e.g. 1.0.0 → 1.1.0
-- **major** (breaking changes): e.g. 1.0.0 → 2.0.0
+1. Get all commits since the last tag:
+   ```bash
+   git log <last-tag>..HEAD --pretty=format:"%s"
+   ```
+   If there is no previous tag, get the last 20 commits:
+   ```bash
+   git log --oneline -20
+   ```
 
-Or let them type a specific version number.
+2. Parse commits by Conventional Commits prefixes and categorize into Chinese sections:
 
-Then update `version` in `package.json` to the new version and commit:
+   ```
+   ## 🚀 新功能
+   - <description from feat commits>
+
+   ## ⚡ 改进
+   - <description from refactor/perf/style commits>
+
+   ## 🐛 修复
+   - <description from fix commits>
+
+   ## 🔧 其他
+   - <description from chore/docs/test/ci commits>
+   ```
+
+   Rules:
+   - Remove the `type(scope): ` prefix from each commit message, keep only the description
+   - Omit any section that has no commits
+   - Omit commits like "chore: bump version to ..." from the changelog
+
+3. Based on the changes, determine a suggested bump type:
+   - If there are `feat` commits → suggest **minor**
+   - If only `fix` commits → suggest **patch**
+   - Otherwise → suggest **patch**
+
+### Step 3: Confirm Version Number
+
+Use `AskUserQuestion` to present the suggested version bump and let the user choose:
+- **patch** (current → next patch)
+- **minor** (current → next minor)
+- **major** (current → next major)
+- Or they can type a specific version number
+
+### Step 4: Confirm Changelog Content
+
+Show the generated changelog to the user and ask them to confirm or modify it using `AskUserQuestion`.
+
+### Step 5: Update package.json
+
+Write the new version number into `package.json`'s `version` field.
+
+### Step 6: Commit and Tag
+
 ```bash
 git add package.json
 git commit -m "chore: bump version to {VERSION}"
+git tag v{VERSION}
 ```
 
-### Step 3: Build
+### Step 7: Build
 
 Run the Windows build:
 ```bash
@@ -47,25 +93,42 @@ npm run build:win
 
 If the build fails, diagnose the error, fix it, and retry.
 
-### Step 4: Create GitHub Release
-
-Create a git tag and GitHub release, uploading the installer artifacts:
+### Step 8: Push
 
 ```bash
-git tag v{VERSION}
 git push origin master --tags
-gh release create v{VERSION} dist/*.exe --title "v{VERSION}" --generate-notes
 ```
 
-### Step 5: Summary
+### Step 9: Create GitHub Release
+
+Upload the 3 build artifacts with the changelog as release notes body:
+
+```bash
+gh release create v{VERSION} \
+  "dist/ClaudeBot Setup {VERSION}.exe" \
+  "dist/ClaudeBot Setup {VERSION}.exe.blockmap" \
+  "dist/latest.yml" \
+  --repo Philo-Li/claudebot \
+  --title "ClaudeBot v{VERSION}" \
+  --notes "{CHANGELOG}"
+```
+
+Important: The `--notes` body is what `electron-updater` shows as `info.releaseNotes` in the auto-update popup. Use the changelog generated in Step 2.
+
+### Step 10: Summary
 
 After publishing, show a summary:
 
 ```
-Version:  {VERSION}
-Tag:      v{VERSION}
-Assets:   (list uploaded .exe files)
-URL:      (release URL from gh output)
+✅ 发版完成
+
+版本:    {VERSION}
+标签:    v{VERSION}
+产物:    ClaudeBot Setup {VERSION}.exe, .blockmap, latest.yml
+地址:    https://github.com/Philo-Li/claudebot/releases/tag/v{VERSION}
+
+更新日志:
+{CHANGELOG}
 ```
 
-Remind the user that installed apps with auto-update enabled will pick up this release automatically.
+Remind the user that installed apps with auto-update will pick up this release automatically.

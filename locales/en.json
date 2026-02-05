@@ -43,6 +43,8 @@
   "update.message": "Version {version} has been downloaded. Restart now to install?",
   "update.restartNow": "Restart Now",
   "update.later": "Later",
+  "update.changelogTitle": "Release Notes",
+  "update.noNotes": "No release notes available",
 
   "config.title": "ClaudeBot Settings",
   "config.tokenLabel": "Telegram Bot Token",

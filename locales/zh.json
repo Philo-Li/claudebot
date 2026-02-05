@@ -43,6 +43,8 @@
   "update.message": "新版本 {version} 已下载完成，是否立即重启安装？",
   "update.restartNow": "立即重启",
   "update.later": "稍后",
+  "update.changelogTitle": "更新日志",
+  "update.noNotes": "暂无更新说明",
 
   "config.title": "ClaudeBot 设置",
   "config.tokenLabel": "Telegram Bot Token",

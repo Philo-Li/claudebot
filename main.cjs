@@ -356,6 +356,111 @@ function closeSplash() {
   }
 }
 
+function showUpdateWindow(version, releaseNotes) {
+  const notes = releaseNotes || t('update.noNotes');
+  // Escape backticks and backslashes for safe embedding in template literal
+  const safeNotes = notes.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  const safeVersion = version.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif; background: #fff; color: #333; display: flex; flex-direction: column; height: 100vh; }
+  .header { padding: 20px 24px 12px; border-bottom: 1px solid #eee; }
+  .header h2 { font-size: 16px; font-weight: 600; color: #111; }
+  .header .version { font-size: 13px; color: #666; margin-top: 4px; }
+  .content { flex: 1; overflow-y: auto; padding: 16px 24px; font-size: 13px; line-height: 1.7; }
+  .content h2 { font-size: 14px; margin: 12px 0 6px; color: #111; }
+  .content h2:first-child { margin-top: 0; }
+  .content ul { padding-left: 20px; margin: 0 0 8px; }
+  .content li { margin: 2px 0; }
+  .footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+  button { padding: 7px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #d0d0d0; background: #f5f5f5; color: #333; }
+  button:hover { background: #e8e8e8; }
+  button.primary { background: #0066ff; color: #fff; border-color: #0066ff; }
+  button.primary:hover { background: #0052cc; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h2>${t('update.changelogTitle')}</h2>
+    <div class="version">v${safeVersion}</div>
+  </div>
+  <div class="content" id="notes"></div>
+  <div class="footer">
+    <button id="btn-later">${t('update.later')}</button>
+    <button id="btn-restart" class="primary">${t('update.restartNow')}</button>
+  </div>
+</body>
+</html>`;
+
+  const updateWin = new BrowserWindow({
+    width: 400,
+    height: 500,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    title: t('update.changelogTitle'),
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  updateWin.setMenuBarVisibility(false);
+  updateWin.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+
+  updateWin.webContents.on('did-finish-load', () => {
+    // Inject markdown-like rendering and button handlers
+    updateWin.webContents.executeJavaScript(`
+      (function() {
+        var raw = \`${safeNotes}\`;
+        // Simple markdown-to-HTML: ## headings and - list items
+        var lines = raw.split('\\n');
+        var html = '';
+        var inList = false;
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (line.startsWith('## ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h2>' + line.slice(3) + '</h2>';
+          } else if (line.startsWith('- ')) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            html += '<li>' + line.slice(2) + '</li>';
+          } else if (line.trim() === '') {
+            if (inList) { html += '</ul>'; inList = false; }
+          } else {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<p>' + line + '</p>';
+          }
+        }
+        if (inList) html += '</ul>';
+        document.getElementById('notes').innerHTML = html;
+
+        document.getElementById('btn-later').addEventListener('click', function() {
+          window.close();
+        });
+        document.getElementById('btn-restart').addEventListener('click', function() {
+          window.location.href = 'about:restart';
+        });
+      })();
+    `);
+  });
+
+  // Intercept navigation to detect button clicks
+  updateWin.webContents.on('will-navigate', (event, url) => {
+    event.preventDefault();
+    if (url === 'about:restart') {
+      updateWin.close();
+      autoUpdater.quitAndInstall();
+    }
+  });
+}
+
 function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
@@ -365,18 +470,10 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('update-downloaded', (info) => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: t('update.ready'),
-      message: t('update.message', { version: info.version }),
-      buttons: [t('update.restartNow'), t('update.later')],
-      defaultId: 0,
-      cancelId: 1,
-    }).then(({ response }) => {
-      if (response === 0) {
-        autoUpdater.quitAndInstall();
-      }
-    });
+    const releaseNotes = typeof info.releaseNotes === 'string'
+      ? info.releaseNotes
+      : (info.releaseNotes && info.releaseNotes[0] && info.releaseNotes[0].note) || '';
+    showUpdateWindow(info.version, releaseNotes);
   });
 
   autoUpdater.on('error', (err) => {
