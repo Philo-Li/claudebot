@@ -20,6 +20,7 @@ files:
   - "!find-missing.cjs"
   - "!prod-deps.txt"
   - "!nul"
+  - "!release.cjs"
 
 afterPack: ./fix-modules.cjs
 
