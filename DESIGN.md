@@ -337,7 +337,7 @@ sendLongMessage → Telegram
 4. 创建成功后，BotFather 会回复一段消息，其中包含 Token，格式类似：
    ```
    Use this token to access the HTTP API:
-   ***REDACTED_TOKEN***
+   123456789:ABCdefGHIjklMNOpqrsTUVwxyz1234567890
    ```
 5. 复制这个 Token，后续填入 `.env` 文件的 `TELEGRAM_BOT_TOKEN` 字段
 
@@ -372,7 +372,7 @@ cp .env.example .env
 
 ```ini
 # Telegram Bot Token (从 @BotFather 获取)
-TELEGRAM_BOT_TOKEN=***REDACTED_TOKEN***
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz1234567890
 
 # 允许使用 Bot 的 Telegram 用户 ID (安全限制)
 ALLOWED_USER_IDS=487381488
