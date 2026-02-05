@@ -5,7 +5,15 @@ const fs = require('fs');
 const cp = require('child_process');
 
 module.exports = async function (context) {
-  const appNodeModules = path.join(context.appOutDir, 'resources', 'app', 'node_modules');
+  // macOS .app bundle has a different structure than Windows/Linux
+  const isMac = process.platform === 'darwin';
+  const appDir = isMac
+    ? path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`, 'Contents', 'Resources', 'app')
+    : path.join(context.appOutDir, 'resources', 'app');
+  const appNodeModules = path.join(appDir, 'node_modules');
+  if (!fs.existsSync(appNodeModules)) {
+    fs.mkdirSync(appNodeModules, { recursive: true });
+  }
   const srcNodeModules = path.join(__dirname, 'node_modules');
 
   // Get all production dependencies from npm
