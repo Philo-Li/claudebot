@@ -47,6 +47,7 @@ mac:
         - arm64
   extendInfo:
     LSUIElement: true
+  notarize: true
 
 linux:
   icon: assets/icon.png
