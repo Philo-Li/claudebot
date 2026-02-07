@@ -38,6 +38,7 @@ function loadConfig(envPath) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const allowedUsers = process.env.ALLOWED_USER_IDS?.split(',').map(id => parseInt(id.trim())) || [];
   const workDir = process.env.WORK_DIR || process.cwd();
+  const allowSkipPermissions = (process.env.ALLOW_SKIP_PERMISSIONS || 'true').toLowerCase() === 'true';
 
   if (!token) {
     throw new Error(t('bot.tokenRequired'));
@@ -47,11 +48,11 @@ function loadConfig(envPath) {
     console.warn(t('bot.noUserIdsWarning'));
   }
 
-  return { token, allowedUsers, workDir };
+  return { token, allowedUsers, workDir, allowSkipPermissions };
 }
 
 function isAllowed(userId) {
-  if (config.allowedUsers.length === 0) return true;
+  if (config.allowedUsers.length === 0) return false;
   return config.allowedUsers.includes(userId);
 }
 
@@ -281,7 +282,9 @@ function registerHandlers() {
     const statusMsg = await bot.sendMessage(chatId, '[status:processing]');
     const onProgress = createProgressUpdater(chatId, statusMsg.message_id);
 
-    const result = await callClaude(chatId, prompt, config.workDir, onProgress);
+    const result = await callClaude(chatId, prompt, config.workDir, onProgress, {
+      allowSkipPermissions: config.allowSkipPermissions,
+    });
     onProgress.finish();
 
     const prefix = result.success ? '' : '[error] ';
@@ -303,7 +306,9 @@ function registerHandlers() {
     const statusMsg = await bot.sendMessage(chatId, '[status:processing]');
     const onProgress = createProgressUpdater(chatId, statusMsg.message_id);
 
-    const result = await callClaude(chatId, msg.text.trim(), config.workDir, onProgress);
+    const result = await callClaude(chatId, msg.text.trim(), config.workDir, onProgress, {
+      allowSkipPermissions: config.allowSkipPermissions,
+    });
     onProgress.finish();
 
     const prefix = result.success ? '' : '[error] ';

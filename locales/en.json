@@ -24,7 +24,7 @@
   "bot.stoppedLog": "Bot stopped.",
   "bot.startFailed": "Start failed:",
   "bot.tokenRequired": "Please set TELEGRAM_BOT_TOKEN",
-  "bot.noUserIdsWarning": "Warning: ALLOWED_USER_IDS not set, anyone can use this bot!",
+  "bot.noUserIdsWarning": "Warning: ALLOWED_USER_IDS not set, Telegram will reject all users.",
   "bot.usageNone": "No usage data for current session (no messages sent yet).",
   "bot.usageInfo": "Session usage:\n- Context: {contextTokens} / {contextWindow} tokens ({pct}%)\n- Output: {outputTokens} tokens\n- Cost: ${cost}\n- Turns: {turns}",
 
@@ -58,6 +58,7 @@
   "config.workDirLabel": "Working Directory",
   "config.workDirHint": "Root directory for bot file operations",
   "config.browse": "Browse...",
+  "config.allowSkipPermissions": "Skip frequent permission prompts (recommended for smoother use)",
   "config.dopamindSection": "Dopamind Integration",
   "config.enableDopamind": "Enable Dopamind",
   "config.deviceTokenLabel": "Device Token",

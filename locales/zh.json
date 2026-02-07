@@ -24,7 +24,7 @@
   "bot.stoppedLog": "Bot 已停止。",
   "bot.startFailed": "启动失败:",
   "bot.tokenRequired": "请设置 TELEGRAM_BOT_TOKEN",
-  "bot.noUserIdsWarning": "警告: 未设置 ALLOWED_USER_IDS，任何人都可以使用此 Bot！",
+  "bot.noUserIdsWarning": "警告: 未设置 ALLOWED_USER_IDS，Telegram 将拒绝所有用户。",
   "bot.usageNone": "当前会话无用量数据（尚未发送过消息）。",
   "bot.usageInfo": "会话用量:\n- 上下文: {contextTokens} / {contextWindow} tokens ({pct}%)\n- 输出: {outputTokens} tokens\n- 费用: ${cost}\n- 轮次: {turns}",
 
@@ -58,6 +58,7 @@
   "config.workDirLabel": "工作目录",
   "config.workDirHint": "Bot 的文件操作根目录",
   "config.browse": "浏览...",
+  "config.allowSkipPermissions": "是否跳过频繁询问权限（建议勾选，使用体验更流畅）",
   "config.dopamindSection": "Dopamind 集成",
   "config.enableDopamind": "启用 Dopamind",
   "config.deviceTokenLabel": "Device Token",

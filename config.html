@@ -142,6 +142,11 @@
     </div>
   </div>
 
+  <div class="checkbox-row">
+    <input type="checkbox" id="allowSkipPermissions">
+    <label for="allowSkipPermissions" data-i18n="config.allowSkipPermissions">是否跳过频繁询问权限（建议勾选，使用体验更流畅）</label>
+  </div>
+
   <h3 data-i18n="config.dopamindSection">Dopamind Integration</h3>
 
   <div class="checkbox-row">
@@ -202,6 +207,7 @@
         if (config.userIds) document.getElementById('userIds').value = config.userIds;
         if (config.workDir) document.getElementById('workDir').value = config.workDir;
         if (config.language) document.getElementById('language').value = config.language;
+        document.getElementById('allowSkipPermissions').checked = (config.allowSkipPermissions || 'true') === 'true';
         // Dopamind fields
         document.getElementById('dopamindEnabled').checked = config.dopamindEnabled === 'true';
         if (config.dopamindToken) document.getElementById('dopamindToken').value = config.dopamindToken;
@@ -232,6 +238,7 @@
           dopamindEnabled: document.getElementById('dopamindEnabled').checked ? 'true' : 'false',
           dopamindToken: document.getElementById('dopamindToken').value.trim(),
           language: document.getElementById('language').value,
+          allowSkipPermissions: document.getElementById('allowSkipPermissions').checked ? 'true' : 'false',
         });
         // Window will be closed by main process after save
       } catch (e) {

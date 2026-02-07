@@ -121,7 +121,10 @@ async function processMessage(config, msg) {
       : `dopamind_${msg.userId}`;
     const workDir = msg.workDir || config.defaultWorkDir || process.cwd();
 
-    const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress, { editDetails: true });
+    const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress, {
+      editDetails: true,
+      allowSkipPermissions: config.allowSkipPermissions,
+    });
 
     // Final progress flush
     if (progressFlushTimer) {
@@ -176,7 +179,7 @@ async function processMessage(config, msg) {
 async function start({ dopamindConfig }) {
   if (running) return;
 
-  const { apiUrl, token, defaultWorkDir } = dopamindConfig;
+  const { apiUrl, token, defaultWorkDir, allowSkipPermissions } = dopamindConfig;
 
   if (!apiUrl || !token) {
     console.error('[Dopamind] Missing required config (apiUrl, token)');
@@ -189,7 +192,7 @@ async function start({ dopamindConfig }) {
   }
 
   running = true;
-  const config = { apiUrl, token, defaultWorkDir, onError: dopamindConfig.onError };
+  const config = { apiUrl, token, defaultWorkDir, allowSkipPermissions, onError: dopamindConfig.onError };
 
   console.log(`[Dopamind] Polling started`);
   console.log(`[Dopamind] API: ${apiUrl}`);

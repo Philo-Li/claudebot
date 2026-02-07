@@ -298,12 +298,15 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
   const retryState = opts._retryState || { contextRetried: false, apiRetries: 0 };
   return new Promise((resolve) => {
     const sessionId = sessions.get(sessionKey);
+    const allowSkipPermissions = opts.allowSkipPermissions !== false;
     const args = [
       '-p', prompt,
       '--output-format', 'stream-json',
-      '--dangerously-skip-permissions',
       '--verbose'
     ];
+    if (allowSkipPermissions) {
+      args.push('--dangerously-skip-permissions');
+    }
 
     if (sessionId) {
       args.push('--resume', sessionId);

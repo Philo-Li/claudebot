@@ -172,6 +172,7 @@ async function startBot() {
           apiUrl: envConfig.dopamindApiUrl || 'https://api.dopamind.app',
           token: envConfig.dopamindToken,
           defaultWorkDir: envConfig.workDir || process.cwd(),
+          allowSkipPermissions: (envConfig.allowSkipPermissions || 'true') === 'true',
           onError: (errMsg) => {
             dopamindRunning = false;
             updateTray();
@@ -237,6 +238,7 @@ function parseEnvFile() {
     dopamindApiUrl: '',
     dopamindToken: '',
     language: '',
+    allowSkipPermissions: 'true',
   };
   if (!fs.existsSync(envPath)) return result;
   const content = fs.readFileSync(envPath, 'utf-8');
@@ -254,11 +256,12 @@ function parseEnvFile() {
     else if (key === 'DOPAMIND_API_URL') result.dopamindApiUrl = val;
     else if (key === 'DOPAMIND_TOKEN') result.dopamindToken = val;
     else if (key === 'LANGUAGE') result.language = val;
+    else if (key === 'ALLOW_SKIP_PERMISSIONS') result.allowSkipPermissions = val;
   }
   return result;
 }
 
-function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken, language }) {
+function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken, language, allowSkipPermissions }) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -272,6 +275,9 @@ function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken,
     '# Dopamind Integration',
     `DOPAMIND_ENABLED=${dopamindEnabled || 'false'}`,
     `DOPAMIND_TOKEN=${dopamindToken || ''}`,
+    '',
+    '# Allow skip permissions (dangerous)',
+    `ALLOW_SKIP_PERMISSIONS=${allowSkipPermissions || 'true'}`,
     '',
     '# Language (zh / en)',
     `LANGUAGE=${language || 'zh'}`,
