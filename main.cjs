@@ -485,6 +485,13 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-available', (info) => {
     console.log('Update available:', info.version);
+    if (manualCheck) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: t('tray.checkUpdates'),
+        message: t('update.downloading', { version: info.version }),
+      });
+    }
     manualCheck = false;
   });
 

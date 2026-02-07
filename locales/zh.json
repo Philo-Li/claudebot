@@ -47,6 +47,7 @@
   "update.noNotes": "暂无更新说明",
   "update.checking": "正在检查更新...",
   "update.upToDate": "当前已是最新版本 (v{version})",
+  "update.downloading": "发现新版本 v{version}，正在下载...",
   "update.error": "检查更新失败: {message}",
 
   "config.title": "ClaudeBot 设置",

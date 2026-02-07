@@ -47,6 +47,7 @@
   "update.noNotes": "No release notes available",
   "update.checking": "Checking for updates...",
   "update.upToDate": "You are on the latest version (v{version})",
+  "update.downloading": "New version v{version} found, downloading...",
   "update.error": "Update check failed: {message}",
 
   "config.title": "ClaudeBot Settings",
