@@ -45,6 +45,9 @@
   "update.later": "Later",
   "update.changelogTitle": "Release Notes",
   "update.noNotes": "No release notes available",
+  "update.checking": "Checking for updates...",
+  "update.upToDate": "You are on the latest version (v{version})",
+  "update.error": "Update check failed: {message}",
 
   "config.title": "ClaudeBot Settings",
   "config.tokenLabel": "Telegram Bot Token",

@@ -45,6 +45,9 @@
   "update.later": "稍后",
   "update.changelogTitle": "更新日志",
   "update.noNotes": "暂无更新说明",
+  "update.checking": "正在检查更新...",
+  "update.upToDate": "当前已是最新版本 (v{version})",
+  "update.error": "检查更新失败: {message}",
 
   "config.title": "ClaudeBot 设置",
   "config.tokenLabel": "Telegram Bot Token",

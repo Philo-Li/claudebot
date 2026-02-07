@@ -92,7 +92,7 @@ function updateTray() {
     },
     {
       label: t('tray.checkUpdates'),
-      click: () => autoUpdater.checkForUpdatesAndNotify(),
+      click: () => autoUpdater.manualCheck(),
     },
     {
       label: t('tray.openDataFolder'),
@@ -465,11 +465,26 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  let manualCheck = false;
+
   autoUpdater.on('update-available', (info) => {
     console.log('Update available:', info.version);
+    manualCheck = false;
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    if (manualCheck) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: t('tray.checkUpdates'),
+        message: t('update.upToDate', { version: app.getVersion() }),
+      });
+    }
+    manualCheck = false;
   });
 
   autoUpdater.on('update-downloaded', (info) => {
+    manualCheck = false;
     const releaseNotes = typeof info.releaseNotes === 'string'
       ? info.releaseNotes
       : (info.releaseNotes && info.releaseNotes[0] && info.releaseNotes[0].note) || '';
@@ -478,7 +493,20 @@ function setupAutoUpdater() {
 
   autoUpdater.on('error', (err) => {
     console.error('Auto-update error:', err);
+    if (manualCheck) {
+      dialog.showMessageBox({
+        type: 'error',
+        title: t('tray.checkUpdates'),
+        message: t('update.error', { message: err.message || String(err) }),
+      });
+    }
+    manualCheck = false;
   });
+
+  autoUpdater.manualCheck = () => {
+    manualCheck = true;
+    autoUpdater.checkForUpdatesAndNotify();
+  };
 }
 
 app.whenReady().then(async () => {
