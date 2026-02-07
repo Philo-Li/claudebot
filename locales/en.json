@@ -66,6 +66,9 @@
   "config.saveFailed": "Save failed: {error}",
   "config.languageLabel": "Interface Language",
 
+  "dopamind.authErrorTitle": "Dopamind Connection Failed",
+  "dopamind.authErrorMessage": "Device token is invalid or expired: {message}\n\nPlease update the token in Settings.",
+
   "splash.loading": "Starting...",
 
   "dialog.startFailed": "Start Failed",

@@ -51,6 +51,14 @@ async function pollOnce(config) {
     const pollUrl = `${config.apiUrl}/api/desktop-queue/poll?limit=1`;
     const res = await request('GET', pollUrl, config.token, null);
 
+    if (res.status === 401) {
+      const errMsg = res.data?.error?.message || 'Invalid device token';
+      console.error(`[Dopamind] Auth failed: ${errMsg}`);
+      stop();
+      if (config.onError) config.onError(errMsg);
+      return;
+    }
+
     const messages = res.data?.messages || res.data?.data?.messages;
     if (res.status !== 200 || !messages?.length) {
       return;
@@ -181,7 +189,7 @@ async function start({ dopamindConfig }) {
   }
 
   running = true;
-  const config = { apiUrl, token, defaultWorkDir };
+  const config = { apiUrl, token, defaultWorkDir, onError: dopamindConfig.onError };
 
   console.log(`[Dopamind] Polling started`);
   console.log(`[Dopamind] API: ${apiUrl}`);

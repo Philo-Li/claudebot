@@ -167,6 +167,14 @@ async function startBot() {
           apiUrl: envConfig.dopamindApiUrl || 'https://api.dopamind.app',
           token: envConfig.dopamindToken,
           defaultWorkDir: envConfig.workDir || process.cwd(),
+          onError: (errMsg) => {
+            dopamindRunning = false;
+            updateTray();
+            dialog.showErrorBox(
+              t('dopamind.authErrorTitle'),
+              t('dopamind.authErrorMessage', { message: errMsg }),
+            );
+          },
         },
       });
       dopamindRunning = true;

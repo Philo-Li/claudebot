@@ -66,6 +66,9 @@
   "config.saveFailed": "保存失败: {error}",
   "config.languageLabel": "界面语言",
 
+  "dopamind.authErrorTitle": "Dopamind 连接失败",
+  "dopamind.authErrorMessage": "Device Token 无效或已过期: {message}\n\n请前往设置更新 Token。",
+
   "splash.loading": "正在启动...",
 
   "dialog.startFailed": "启动失败",
