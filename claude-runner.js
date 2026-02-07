@@ -13,7 +13,7 @@
  */
 
 import { spawn } from 'child_process';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -52,12 +52,28 @@ export function findClaude() {
       if (p && existsSync(p)) return p;
     }
   } else {
+    const home = process.env.HOME || '';
     const candidates = [
       '/usr/local/bin/claude',
       '/usr/bin/claude',
+      '/opt/homebrew/bin/claude',
+      home + '/.claude/local/bin/claude',
+      home + '/.local/bin/claude',
+      home + '/.npm-global/bin/claude',
     ];
     for (const p of candidates) {
-      if (existsSync(p)) return p;
+      if (p && existsSync(p)) return p;
+    }
+    // NVM: ~/.nvm/versions/node/*/bin/claude
+    const nvmDir = home + '/.nvm/versions/node';
+    if (existsSync(nvmDir)) {
+      try {
+        const versions = readdirSync(nvmDir);
+        for (const v of versions.reverse()) {
+          const p = nvmDir + '/' + v + '/bin/claude';
+          if (existsSync(p)) return p;
+        }
+      } catch {}
     }
   }
   return 'claude';
