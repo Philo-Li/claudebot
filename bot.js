@@ -12,6 +12,7 @@ import {
   killAllProcesses,
   getSessionUsage,
   resetSessionUsage,
+  deleteSession,
 } from './claude-runner.js';
 
 const require = createRequire(import.meta.url);
@@ -203,7 +204,7 @@ function registerHandlers() {
 
   bot.onText(/\/new/, (msg) => {
     if (!isAllowed(msg.from.id)) return;
-    sessions.delete(msg.chat.id);
+    deleteSession(msg.chat.id);
     resetSessionUsage(msg.chat.id);
     bot.sendMessage(msg.chat.id, t('bot.newSession'));
   });
@@ -255,8 +256,8 @@ function registerHandlers() {
 
   bot.onText(/\/status/, (msg) => {
     if (!isAllowed(msg.from.id)) return;
-    const isRunning = runningProcesses.has(msg.chat.id);
-    const sessionId = sessions.get(msg.chat.id);
+    const isRunning = runningProcesses.has(String(msg.chat.id));
+    const sessionId = sessions.get(String(msg.chat.id));
     bot.sendMessage(msg.chat.id, t('bot.status', {
       workDir: config.workDir,
       taskStatus: isRunning ? t('bot.statusRunning') : t('bot.statusIdle'),
@@ -271,7 +272,7 @@ function registerHandlers() {
       bot.sendMessage(chatId, t('bot.noPermission'));
       return;
     }
-    if (runningProcesses.has(chatId)) {
+    if (runningProcesses.has(String(chatId))) {
       bot.sendMessage(chatId, t('bot.taskRunning'));
       return;
     }
@@ -294,7 +295,7 @@ function registerHandlers() {
       bot.sendMessage(chatId, t('bot.noPermission'));
       return;
     }
-    if (runningProcesses.has(chatId)) {
+    if (runningProcesses.has(String(chatId))) {
       bot.sendMessage(chatId, t('bot.taskRunning'));
       return;
     }

@@ -122,11 +122,18 @@ export function getSessions() {
   return sessions;
 }
 
+export function deleteSession(sessionKey) {
+  sessionKey = String(sessionKey);
+  sessions.delete(sessionKey);
+  saveSessions();
+}
+
 export function getRunningProcesses() {
   return runningProcesses;
 }
 
 export function killProcess(sessionKey) {
+  sessionKey = String(sessionKey);
   const proc = runningProcesses.get(sessionKey);
   if (proc) {
     proc.kill('SIGTERM');
@@ -181,11 +188,11 @@ function updateSessionUsage(sessionKey, msg, lastAssistantUsage) {
 }
 
 export function getSessionUsage(sessionKey) {
-  return sessionUsage.get(sessionKey) || null;
+  return sessionUsage.get(String(sessionKey)) || null;
 }
 
 export function resetSessionUsage(sessionKey) {
-  sessionUsage.delete(sessionKey);
+  sessionUsage.delete(String(sessionKey));
 }
 
 // ============== Stream message handler ==============
@@ -256,6 +263,7 @@ const API_RETRY_DELAY = 5000;
 const API_RETRY_PATTERN = /API Error: 5\d{2}\b|"type":"api_error"|overloaded/;
 
 export async function callClaude(sessionKey, prompt, workDir, onProgress, _retryState) {
+  sessionKey = String(sessionKey);
   const retryState = _retryState || { contextRetried: false, apiRetries: 0 };
   return new Promise((resolve) => {
     const sessionId = sessions.get(sessionKey);
