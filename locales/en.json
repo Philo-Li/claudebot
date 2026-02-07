@@ -63,6 +63,8 @@
   "config.enableDopamind": "Enable Dopamind",
   "config.deviceTokenLabel": "Device Token",
   "config.deviceTokenHint": "Generate from Dopamind App → ClaudeBot page (dpm_...)",
+  "config.dopamindApiUrlLabel": "API URL",
+  "config.dopamindApiUrlHint": "Default is https://api.dopamind.app",
   "config.save": "Save",
   "config.saving": "Saving...",
   "config.saveFailed": "Save failed: {error}",

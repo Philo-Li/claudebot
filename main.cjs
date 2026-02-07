@@ -261,7 +261,7 @@ function parseEnvFile() {
   return result;
 }
 
-function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken, language, allowSkipPermissions }) {
+function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindApiUrl, dopamindToken, language, allowSkipPermissions }) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -274,6 +274,7 @@ function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken,
     '',
     '# Dopamind Integration',
     `DOPAMIND_ENABLED=${dopamindEnabled || 'false'}`,
+    `DOPAMIND_API_URL=${dopamindApiUrl || ''}`,
     `DOPAMIND_TOKEN=${dopamindToken || ''}`,
     '',
     '# Allow skip permissions (dangerous)',

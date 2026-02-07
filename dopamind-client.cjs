@@ -16,19 +16,29 @@ let claudeRunner = null; // dynamically imported ESM module
 /**
  * Make an HTTP(S) request with JSON body using fetch
  */
-async function request(method, fullUrl, token, body) {
+async function request(method, fullUrl, token, body, timeoutMs = 10000) {
   const parsed = new URL(fullUrl);
   parsed.searchParams.set('token', token);
 
   const opts = {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
   };
   if (body) {
     opts.body = JSON.stringify(body);
   }
 
-  const res = await fetch(parsed.toString(), opts);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(parsed.toString(), { ...opts, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
   let data;
   try {
     data = await res.json();
@@ -68,7 +78,11 @@ async function pollOnce(config) {
       await processMessage(config, msg);
     }
   } catch (err) {
-    console.error('[Dopamind] Poll error:', err.message);
+    if (err.name === 'AbortError') {
+      console.error('[Dopamind] Poll timeout');
+    } else {
+      console.error('[Dopamind] Poll error:', err.message);
+    }
   }
 }
 
@@ -92,7 +106,11 @@ async function processMessage(config, msg) {
         steps: stepsToSend,
       });
     } catch (err) {
-      console.error('[Dopamind] Progress flush error:', err.message);
+      if (err.name === 'AbortError') {
+        console.error('[Dopamind] Progress flush timeout');
+      } else {
+        console.error('[Dopamind] Progress flush error:', err.message);
+      }
     }
     lastFlush = Date.now();
   };
@@ -154,7 +172,11 @@ async function processMessage(config, msg) {
 
     console.log(`[Dopamind] Message ${msg.id} completed (success=${result.success})${result.success ? '' : ' output=' + (result.output || '').slice(0, 200)}`);
   } catch (err) {
-    console.error(`[Dopamind] Message ${msg.id} error:`, err.message);
+    if (err.name === 'AbortError') {
+      console.error(`[Dopamind] Message ${msg.id} timeout`);
+    } else {
+      console.error(`[Dopamind] Message ${msg.id} error:`, err.message);
+    }
 
     if (progressFlushTimer) {
       clearTimeout(progressFlushTimer);

@@ -63,6 +63,8 @@
   "config.enableDopamind": "启用 Dopamind",
   "config.deviceTokenLabel": "Device Token",
   "config.deviceTokenHint": "从 Dopamind App → ClaudeBot 页面生成 (dpm_...)",
+  "config.dopamindApiUrlLabel": "API URL",
+  "config.dopamindApiUrlHint": "默认 https://api.dopamind.app",
   "config.save": "保存",
   "config.saving": "保存中...",
   "config.saveFailed": "保存失败: {error}",
