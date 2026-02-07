@@ -1,6 +1,6 @@
 {
   "name": "claude-telegram-bot",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Control Claude Code via Telegram",
   "author": {
     "name": "Philo Li",
