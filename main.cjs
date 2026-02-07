@@ -443,6 +443,14 @@ function showUpdateWindow(version, releaseNotes) {
       (function() {
         var raw = \`${safeNotes}\`;
         // Simple markdown-to-HTML: ## headings and - list items
+        function escapeHtml(s) {
+          return s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
         var lines = raw.split('\\n');
         var html = '';
         var inList = false;
@@ -450,15 +458,15 @@ function showUpdateWindow(version, releaseNotes) {
           var line = lines[i];
           if (line.startsWith('## ')) {
             if (inList) { html += '</ul>'; inList = false; }
-            html += '<h2>' + line.slice(3) + '</h2>';
+            html += '<h2>' + escapeHtml(line.slice(3)) + '</h2>';
           } else if (line.startsWith('- ')) {
             if (!inList) { html += '<ul>'; inList = true; }
-            html += '<li>' + line.slice(2) + '</li>';
+            html += '<li>' + escapeHtml(line.slice(2)) + '</li>';
           } else if (line.trim() === '') {
             if (inList) { html += '</ul>'; inList = false; }
           } else {
             if (inList) { html += '</ul>'; inList = false; }
-            html += '<p>' + line + '</p>';
+            html += '<p>' + escapeHtml(line) + '</p>';
           }
         }
         if (inList) html += '</ul>';
