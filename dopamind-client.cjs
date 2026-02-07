@@ -108,7 +108,9 @@ async function processMessage(config, msg) {
       claudeRunner = await import('./claude-runner.js');
     }
 
-    const sessionKey = `dopamind_${msg.userId}`;
+    const sessionKey = msg.conversationId
+      ? `dopamind_${msg.userId}_${msg.conversationId}`
+      : `dopamind_${msg.userId}`;
     const workDir = msg.workDir || config.defaultWorkDir || process.cwd();
 
     const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress);
