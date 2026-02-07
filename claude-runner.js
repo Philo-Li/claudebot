@@ -144,7 +144,7 @@ export function killProcess(sessionKey) {
 }
 
 export function killAllProcesses() {
-  for (const [key, proc] of runningProcesses) {
+  for (const [_key, proc] of runningProcesses) {
     try {
       proc.kill('SIGTERM');
     } catch {}
@@ -160,21 +160,27 @@ function updateSessionUsage(sessionKey, msg, lastAssistantUsage) {
   // Use last assistant message's usage for context size (not the aggregate total)
   // The result message's usage is cumulative across all API turns, which is misleading
   const au = lastAssistantUsage || {};
-  const contextTokens = (au.input_tokens || 0)
-    + (au.cache_creation_input_tokens || 0)
-    + (au.cache_read_input_tokens || 0);
+  const contextTokens =
+    (au.input_tokens || 0) + (au.cache_creation_input_tokens || 0) + (au.cache_read_input_tokens || 0);
 
   // Extract contextWindow from modelUsage
   let contextWindow = 0;
   if (msg.modelUsage) {
     for (const model of Object.values(msg.modelUsage)) {
-      if (model.contextWindow) { contextWindow = model.contextWindow; break; }
+      if (model.contextWindow) {
+        contextWindow = model.contextWindow;
+        break;
+      }
     }
   }
 
   const prev = sessionUsage.get(sessionKey) || {
-    totalCost: 0, totalInputTokens: 0, totalOutputTokens: 0,
-    contextTokens: 0, contextWindow: 0, turns: 0,
+    totalCost: 0,
+    totalInputTokens: 0,
+    totalOutputTokens: 0,
+    contextTokens: 0,
+    contextWindow: 0,
+    turns: 0,
   };
 
   sessionUsage.set(sessionKey, {
@@ -204,18 +210,26 @@ function truncate(str, max) {
 
 function getToolDetail(toolName, input) {
   switch (toolName) {
-    case 'Read':  return input.file_path || '';
-    case 'Write': return input.file_path || '';
+    case 'Read':
+      return input.file_path || '';
+    case 'Write':
+      return input.file_path || '';
     case 'Bash': {
       const cmd = input.command || '';
       return truncate(cmd, 80);
     }
-    case 'Glob':      return input.pattern || '';
-    case 'Grep':      return input.pattern || '';
-    case 'Task':      return input.description || '';
-    case 'WebSearch':  return input.query || '';
-    case 'WebFetch':   return input.url || '';
-    default:           return '';
+    case 'Glob':
+      return input.pattern || '';
+    case 'Grep':
+      return input.pattern || '';
+    case 'Task':
+      return input.description || '';
+    case 'WebSearch':
+      return input.query || '';
+    case 'WebFetch':
+      return input.url || '';
+    default:
+      return '';
   }
 }
 
@@ -299,11 +313,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
   return new Promise((resolve) => {
     const sessionId = sessions.get(sessionKey);
     const allowSkipPermissions = opts.allowSkipPermissions !== false;
-    const args = [
-      '-p', prompt,
-      '--output-format', 'stream-json',
-      '--verbose'
-    ];
+    const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose'];
     if (allowSkipPermissions) {
       args.push('--dangerously-skip-permissions');
     }
@@ -319,7 +329,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
       cwd: workDir,
       env: { ...process.env, FORCE_COLOR: '0' },
       stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true
+      windowsHide: true,
     });
 
     runningProcesses.set(sessionKey, proc);
@@ -355,7 +365,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
             finalResult = {
               success: !msg.is_error,
               output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
-              cost: msg.total_cost_usd
+              cost: msg.total_cost_usd,
             };
           }
 
@@ -387,7 +397,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
             finalResult = {
               success: !msg.is_error,
               output: msg.result || msg.errors?.join('\n') || t('runner.noOutput'),
-              cost: msg.total_cost_usd
+              cost: msg.total_cost_usd,
             };
           }
           handleStreamMessage(msg, sessionKey, onProgress, opts);
@@ -402,17 +412,29 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
         sessions.delete(sessionKey);
         resetSessionUsage(sessionKey);
         saveSessions();
-        resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...opts, _retryState: { ...retryState, contextRetried: true } }));
+        resolve(
+          callClaude(sessionKey, prompt, workDir, onProgress, {
+            ...opts,
+            _retryState: { ...retryState, contextRetried: true },
+          }),
+        );
         return;
       }
 
       // Auto-retry on API 5xx / overloaded errors
       if (!finalResult?.success && retryState.apiRetries < MAX_API_RETRIES && API_RETRY_PATTERN.test(errorOutput)) {
         const attempt = retryState.apiRetries + 1;
-        console.log(`[${new Date().toISOString()}] API 错误，${API_RETRY_DELAY / 1000}s 后重试 (${attempt}/${MAX_API_RETRIES})`);
+        console.log(
+          `[${new Date().toISOString()}] API 错误，${API_RETRY_DELAY / 1000}s 后重试 (${attempt}/${MAX_API_RETRIES})`,
+        );
         if (onProgress) onProgress(`[status:processing] retry ${attempt}/${MAX_API_RETRIES}...`);
         setTimeout(() => {
-          resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...opts, _retryState: { ...retryState, apiRetries: attempt } }));
+          resolve(
+            callClaude(sessionKey, prompt, workDir, onProgress, {
+              ...opts,
+              _retryState: { ...retryState, apiRetries: attempt },
+            }),
+          );
         }, API_RETRY_DELAY);
         return;
       }
@@ -422,7 +444,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
       } else {
         resolve({
           success: false,
-          output: stderr || t('runner.noOutput')
+          output: stderr || t('runner.noOutput'),
         });
       }
     });

@@ -11,16 +11,20 @@ directories:
   output: dist
 
 files:
-  - "**/*"
-  - "!dist"
-  - "!.env"
-  - "!.env.example"
-  - "!fix-modules.cjs"
-  - "!delete-nul.cjs"
-  - "!find-missing.cjs"
-  - "!prod-deps.txt"
-  - "!nul"
-  - "!release.cjs"
+  - '**/*'
+  - '!dist'
+  - '!.env'
+  - '!.env.example'
+  - '!fix-modules.cjs'
+  - '!delete-nul.cjs'
+  - '!find-missing.cjs'
+  - '!prod-deps.txt'
+  - '!nul'
+  - '!release.cjs'
+  - '!eslint.config.mjs'
+  - '!.prettierrc'
+  - '!.prettierignore'
+  - '!.husky'
 
 afterPack: ./fix-modules.cjs
 

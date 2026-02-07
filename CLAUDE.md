@@ -45,13 +45,13 @@ npm run build:linux    # Linux (AppImage + deb)
 
 ## Technology Stack
 
-| Component | Technology |
-|-----------|------------|
-| Desktop Shell | Electron |
-| Telegram API | node-telegram-bot-api |
-| Module System | ESM (bot.js, claude-runner.js) + CJS (main.cjs, dopamind-client.cjs) |
-| CLI Integration | Claude Code CLI via child_process.spawn |
-| Build | electron-builder |
+| Component       | Technology                                                           |
+| --------------- | -------------------------------------------------------------------- |
+| Desktop Shell   | Electron                                                             |
+| Telegram API    | node-telegram-bot-api                                                |
+| Module System   | ESM (bot.js, claude-runner.js) + CJS (main.cjs, dopamind-client.cjs) |
+| CLI Integration | Claude Code CLI via child_process.spawn                              |
+| Build           | electron-builder                                                     |
 
 ## Architecture Notes
 
@@ -70,6 +70,19 @@ Stored in `.env` at Electron's userData path:
 - `WORK_DIR` — Default working directory for Claude
 - `DOPAMIND_ENABLED` — Enable Dopamind client (`true`/`false`)
 - `DOPAMIND_TOKEN` — Dopamind API authentication token
+
+## Code Quality
+
+ESLint 9 (flat config) + Prettier + husky pre-commit hooks.
+
+```bash
+npm run lint          # Check for lint errors
+npm run lint:fix      # Auto-fix lint errors
+npm run format        # Format all files with Prettier
+npm run format:check  # Check formatting without writing
+```
+
+Pre-commit hook runs `lint-staged` automatically on staged `.js`/`.cjs`/`.mjs`/`.json`/`.md`/`.yml` files.
 
 ## Development Guidelines
 
@@ -93,16 +106,16 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) specificatio
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Code style (formatting, semicolons, etc.) |
-| `refactor` | Code refactoring (no feature/fix) |
-| `perf` | Performance improvement |
-| `test` | Adding or updating tests |
-| `chore` | Build process, dependencies, CI/CD |
+| Type       | Description                               |
+| ---------- | ----------------------------------------- |
+| `feat`     | New feature                               |
+| `fix`      | Bug fix                                   |
+| `docs`     | Documentation only                        |
+| `style`    | Code style (formatting, semicolons, etc.) |
+| `refactor` | Code refactoring (no feature/fix)         |
+| `perf`     | Performance improvement                   |
+| `test`     | Adding or updating tests                  |
+| `chore`    | Build process, dependencies, CI/CD        |
 
 ### Scopes
 

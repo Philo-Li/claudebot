@@ -22,11 +22,11 @@ ClaudeBot 是一个 Windows/macOS/Linux 系统托盘应用，让你通过 **Tele
 
 前往 [Releases](https://github.com/Philo-Li/claudebot/releases) 页面，下载对应平台的安装包：
 
-| 平台 | 文件 |
-|------|------|
+| 平台    | 文件                                                                    |
+| ------- | ----------------------------------------------------------------------- |
 | Windows | `ClaudeBot-Setup-x.x.x.exe`（安装版）或 `ClaudeBot-x.x.x.exe`（便携版） |
-| macOS | `ClaudeBot-x.x.x.dmg` |
-| Linux | `ClaudeBot-x.x.x.AppImage` 或 `.deb` |
+| macOS   | `ClaudeBot-x.x.x.dmg`                                                   |
+| Linux   | `ClaudeBot-x.x.x.AppImage` 或 `.deb`                                    |
 
 ### 前置条件
 
@@ -61,15 +61,15 @@ ClaudeBot 会调用 Claude Code 处理你的请求，并把结果发回 Telegram
 
 ## Telegram 命令
 
-| 命令 | 说明 |
-|------|------|
-| `/ask <问题>` | 向 Claude 提问 |
-| `/run <指令>` | 让 Claude 执行任务 |
-| `/new` | 开始新会话（清除上下文） |
-| `/stop` | 停止当前正在运行的任务 |
-| `/dir` | 查看当前工作目录 |
-| `/setdir <路径>` | 设置工作目录 |
-| `/status` | 查看 Bot 运行状态 |
+| 命令             | 说明                     |
+| ---------------- | ------------------------ |
+| `/ask <问题>`    | 向 Claude 提问           |
+| `/run <指令>`    | 让 Claude 执行任务       |
+| `/new`           | 开始新会话（清除上下文） |
+| `/stop`          | 停止当前正在运行的任务   |
+| `/dir`           | 查看当前工作目录         |
+| `/setdir <路径>` | 设置工作目录             |
+| `/status`        | 查看 Bot 运行状态        |
 
 直接发送普通消息（不带 `/`）也会被当作提问发送给 Claude，并且自动保持会话上下文。
 
@@ -90,15 +90,15 @@ ClaudeBot 支持接入 [Dopamind](https://dopamind.app) 平台，从云端队列
 
 右键点击系统托盘图标，可以看到以下选项：
 
-| 菜单项 | 说明 |
-|--------|------|
-| Status | 显示当前运行状态（Telegram / Dopamind / 已停止） |
-| Start Bot | 启动所有已配置的服务 |
-| Stop Bot | 停止所有服务 |
-| 设置 | 打开配置窗口 |
-| Check for Updates | 手动检查新版本 |
-| Open Data Folder | 打开配置文件所在目录 |
-| Quit | 退出应用 |
+| 菜单项            | 说明                                             |
+| ----------------- | ------------------------------------------------ |
+| Status            | 显示当前运行状态（Telegram / Dopamind / 已停止） |
+| Start Bot         | 启动所有已配置的服务                             |
+| Stop Bot          | 停止所有服务                                     |
+| 设置              | 打开配置窗口                                     |
+| Check for Updates | 手动检查新版本                                   |
+| Open Data Folder  | 打开配置文件所在目录                             |
+| Quit              | 退出应用                                         |
 
 ## 从源码运行
 
@@ -133,13 +133,13 @@ npm run build:linux    # Linux（AppImage + deb）
 - macOS: `~/Library/Application Support/ClaudeBot/.env`
 - Linux: `~/.config/ClaudeBot/.env`
 
-| 变量名 | 说明 |
-|--------|------|
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot API Token |
-| `ALLOWED_USER_IDS` | 允许使用的 Telegram 用户 ID，逗号分隔 |
-| `WORK_DIR` | Claude Code 默认工作目录 |
-| `DOPAMIND_ENABLED` | 是否启用 Dopamind 集成（`true` / `false`） |
-| `DOPAMIND_TOKEN` | Dopamind 设备认证 Token |
+| 变量名               | 说明                                       |
+| -------------------- | ------------------------------------------ |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot API Token                     |
+| `ALLOWED_USER_IDS`   | 允许使用的 Telegram 用户 ID，逗号分隔      |
+| `WORK_DIR`           | Claude Code 默认工作目录                   |
+| `DOPAMIND_ENABLED`   | 是否启用 Dopamind 集成（`true` / `false`） |
+| `DOPAMIND_TOKEN`     | Dopamind 设备认证 Token                    |
 
 ## 自动更新
 

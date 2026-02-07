@@ -22,11 +22,11 @@ Send a message from your phone, and ClaudeBot will invoke Claude Code on your co
 
 Go to the [Releases](https://github.com/Philo-Li/claudebot/releases) page and download the installer for your platform:
 
-| Platform | File |
-|----------|------|
-| Windows | `ClaudeBot-Setup-x.x.x.exe` (installer) or `ClaudeBot-x.x.x.exe` (portable) |
-| macOS | `ClaudeBot-x.x.x.dmg` |
-| Linux | `ClaudeBot-x.x.x.AppImage` or `.deb` |
+| Platform | File                                                                        |
+| -------- | --------------------------------------------------------------------------- |
+| Windows  | `ClaudeBot-Setup-x.x.x.exe` (installer) or `ClaudeBot-x.x.x.exe` (portable) |
+| macOS    | `ClaudeBot-x.x.x.dmg`                                                       |
+| Linux    | `ClaudeBot-x.x.x.AppImage` or `.deb`                                        |
 
 ### Prerequisites
 
@@ -61,15 +61,15 @@ ClaudeBot will pass your message to Claude Code and send the result back to Tele
 
 ## Telegram Commands
 
-| Command | Description |
-|---------|-------------|
-| `/ask <question>` | Ask Claude a question |
-| `/run <instruction>` | Have Claude execute a task |
-| `/new` | Start a new session (clear context) |
-| `/stop` | Stop the currently running task |
-| `/dir` | View the current working directory |
-| `/setdir <path>` | Set the working directory |
-| `/status` | View bot status |
+| Command              | Description                         |
+| -------------------- | ----------------------------------- |
+| `/ask <question>`    | Ask Claude a question               |
+| `/run <instruction>` | Have Claude execute a task          |
+| `/new`               | Start a new session (clear context) |
+| `/stop`              | Stop the currently running task     |
+| `/dir`               | View the current working directory  |
+| `/setdir <path>`     | Set the working directory           |
+| `/status`            | View bot status                     |
 
 Plain messages (without `/`) are also sent to Claude as prompts, with session context preserved automatically.
 
@@ -90,15 +90,15 @@ Once enabled, ClaudeBot polls the Dopamind queue every 3 seconds, processes inco
 
 Right-click the system tray icon to access:
 
-| Item | Description |
-|------|-------------|
-| Status | Shows current state (Telegram / Dopamind / Stopped) |
-| Start Bot | Start all configured services |
-| Stop Bot | Stop all running services |
-| Settings | Open the configuration window |
-| Check for Updates | Manually check for a new version |
-| Open Data Folder | Open the directory containing config files |
-| Quit | Stop services and exit |
+| Item              | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| Status            | Shows current state (Telegram / Dopamind / Stopped) |
+| Start Bot         | Start all configured services                       |
+| Stop Bot          | Stop all running services                           |
+| Settings          | Open the configuration window                       |
+| Check for Updates | Manually check for a new version                    |
+| Open Data Folder  | Open the directory containing config files          |
+| Quit              | Stop services and exit                              |
 
 ## Running from Source
 
@@ -133,13 +133,13 @@ All settings are stored in a `.env` file under the system user data directory:
 - macOS: `~/Library/Application Support/ClaudeBot/.env`
 - Linux: `~/.config/ClaudeBot/.env`
 
-| Variable | Description |
-|----------|-------------|
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
-| `ALLOWED_USER_IDS` | Comma-separated list of allowed Telegram user IDs |
-| `WORK_DIR` | Default working directory for Claude Code |
-| `DOPAMIND_ENABLED` | Enable Dopamind integration (`true` / `false`) |
-| `DOPAMIND_TOKEN` | Dopamind device authentication token |
+| Variable             | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot API token                            |
+| `ALLOWED_USER_IDS`   | Comma-separated list of allowed Telegram user IDs |
+| `WORK_DIR`           | Default working directory for Claude Code         |
+| `DOPAMIND_ENABLED`   | Enable Dopamind integration (`true` / `false`)    |
+| `DOPAMIND_TOKEN`     | Dopamind device authentication token              |
 
 ## Auto Update
 

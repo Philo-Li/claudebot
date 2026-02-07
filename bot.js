@@ -27,7 +27,7 @@ function loadConfig(envPath) {
   const envFile = envPath || '.env';
   if (existsSync(envFile)) {
     const envContent = readFileSync(envFile, 'utf-8');
-    envContent.split('\n').forEach(line => {
+    envContent.split('\n').forEach((line) => {
       const [key, ...values] = line.split('=');
       if (key && values.length > 0 && !key.startsWith('#')) {
         process.env[key.trim()] = values.join('=').trim();
@@ -36,7 +36,7 @@ function loadConfig(envPath) {
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const allowedUsers = process.env.ALLOWED_USER_IDS?.split(',').map(id => parseInt(id.trim())) || [];
+  const allowedUsers = process.env.ALLOWED_USER_IDS?.split(',').map((id) => parseInt(id.trim())) || [];
   const workDir = process.env.WORK_DIR || process.cwd();
   const allowSkipPermissions = (process.env.ALLOW_SKIP_PERMISSIONS || 'true').toLowerCase() === 'true';
 
@@ -56,10 +56,7 @@ function isAllowed(userId) {
   return config.allowedUsers.includes(userId);
 }
 
-// ============== 会话持久化 (delegate to runner) ==============
-function saveSessions() {
-  // Sessions are auto-saved by claude-runner on result
-}
+// Sessions are auto-saved by claude-runner on result
 
 // ============== 进度更新 ==============
 const MAX_VISIBLE_TOOLS = 5;
@@ -115,17 +112,14 @@ function createProgressUpdater(chatId, messageId) {
 
   const flush = () => {
     const display = buildProgressDisplay(steps);
-    const trimmed = display.length > 3800
-      ? '...\n' + display.slice(display.length - 3800)
-      : display;
+    const trimmed = display.length > 3800 ? '...\n' + display.slice(display.length - 3800) : display;
     const newText = `[status:processing]\n\n${trimmed}`;
     if (newText === lastText) return;
 
     lastText = newText;
     lastUpdate = Date.now();
 
-    bot.editMessageText(newText, { chat_id: chatId, message_id: messageId })
-      .catch(() => {});
+    bot.editMessageText(newText, { chat_id: chatId, message_id: messageId }).catch(() => {});
   };
 
   const updater = (text) => {
@@ -134,25 +128,31 @@ function createProgressUpdater(chatId, messageId) {
     const now = Date.now();
     if (now - lastUpdate < 2000) {
       if (!pendingFlush) {
-        pendingFlush = setTimeout(() => { pendingFlush = null; flush(); }, 2000);
+        pendingFlush = setTimeout(() => {
+          pendingFlush = null;
+          flush();
+        }, 2000);
       }
       return;
     }
-    if (pendingFlush) { clearTimeout(pendingFlush); pendingFlush = null; }
+    if (pendingFlush) {
+      clearTimeout(pendingFlush);
+      pendingFlush = null;
+    }
     flush();
   };
 
   updater.finish = () => {
-    if (pendingFlush) { clearTimeout(pendingFlush); pendingFlush = null; }
+    if (pendingFlush) {
+      clearTimeout(pendingFlush);
+      pendingFlush = null;
+    }
     if (steps.length === 0) return;
     const display = buildFinishDisplay(steps);
     if (!display) return;
-    const trimmed = display.length > 3800
-      ? '...\n' + display.slice(display.length - 3800)
-      : display;
+    const trimmed = display.length > 3800 ? '...\n' + display.slice(display.length - 3800) : display;
     if (trimmed !== lastText) {
-      bot.editMessageText(trimmed, { chat_id: chatId, message_id: messageId })
-        .catch(() => {});
+      bot.editMessageText(trimmed, { chat_id: chatId, message_id: messageId }).catch(() => {});
     }
   };
 
@@ -186,7 +186,7 @@ async function sendLongMessage(chatId, text, prefix = '') {
 function usageSuffix(chatId) {
   const usage = getSessionUsage(chatId);
   if (!usage || !usage.contextWindow) return '';
-  const remaining = (100 - usage.contextTokens / usage.contextWindow * 100).toFixed(0);
+  const remaining = (100 - (usage.contextTokens / usage.contextWindow) * 100).toFixed(0);
   return `\n\n[context] ${remaining}% remaining`;
 }
 
@@ -217,17 +217,18 @@ function registerHandlers() {
       bot.sendMessage(msg.chat.id, t('bot.usageNone'));
       return;
     }
-    const pct = usage.contextWindow
-      ? (usage.contextTokens / usage.contextWindow * 100).toFixed(1)
-      : '?';
-    bot.sendMessage(msg.chat.id, t('bot.usageInfo', {
-      contextTokens: usage.contextTokens.toLocaleString(),
-      contextWindow: usage.contextWindow.toLocaleString(),
-      pct,
-      outputTokens: usage.totalOutputTokens.toLocaleString(),
-      cost: usage.totalCost.toFixed(4),
-      turns: usage.turns,
-    }));
+    const pct = usage.contextWindow ? ((usage.contextTokens / usage.contextWindow) * 100).toFixed(1) : '?';
+    bot.sendMessage(
+      msg.chat.id,
+      t('bot.usageInfo', {
+        contextTokens: usage.contextTokens.toLocaleString(),
+        contextWindow: usage.contextWindow.toLocaleString(),
+        pct,
+        outputTokens: usage.totalOutputTokens.toLocaleString(),
+        cost: usage.totalCost.toFixed(4),
+        turns: usage.turns,
+      }),
+    );
   });
 
   bot.onText(/\/stop/, (msg) => {
@@ -259,12 +260,15 @@ function registerHandlers() {
     if (!isAllowed(msg.from.id)) return;
     const isRunning = runningProcesses.has(String(msg.chat.id));
     const sessionId = sessions.get(String(msg.chat.id));
-    bot.sendMessage(msg.chat.id, t('bot.status', {
-      workDir: config.workDir,
-      taskStatus: isRunning ? t('bot.statusRunning') : t('bot.statusIdle'),
-      session: sessionId ? sessionId.slice(0, 8) + '...' : t('bot.sessionNone'),
-      userId: msg.from.id,
-    }));
+    bot.sendMessage(
+      msg.chat.id,
+      t('bot.status', {
+        workDir: config.workDir,
+        taskStatus: isRunning ? t('bot.statusRunning') : t('bot.statusIdle'),
+        session: sessionId ? sessionId.slice(0, 8) + '...' : t('bot.sessionNone'),
+        userId: msg.from.id,
+      }),
+    );
   });
 
   bot.onText(/\/(ask|run) ([\s\S]+)/, async (msg, match) => {
@@ -331,7 +335,11 @@ export async function start({ envPath, sessionsPath } = {}) {
   console.log('========================================');
   console.log(t('bot.started'));
   console.log(t('bot.workDir', { dir: config.workDir }));
-  console.log(t('bot.authorizedUsers', { users: config.allowedUsers.length > 0 ? config.allowedUsers.join(', ') : t('bot.allUsers') }));
+  console.log(
+    t('bot.authorizedUsers', {
+      users: config.allowedUsers.length > 0 ? config.allowedUsers.join(', ') : t('bot.allUsers'),
+    }),
+  );
   console.log('========================================');
 }
 
@@ -352,10 +360,9 @@ export async function stop() {
 
 // ============== 直接运行兼容 ==============
 const __filename = fileURLToPath(import.meta.url);
-const isDirectRun = process.argv[1] && (
-  process.argv[1] === __filename ||
-  process.argv[1].replace(/\\/g, '/') === __filename.replace(/\\/g, '/')
-);
+const isDirectRun =
+  process.argv[1] &&
+  (process.argv[1] === __filename || process.argv[1].replace(/\\/g, '/') === __filename.replace(/\\/g, '/'));
 
 if (isDirectRun) {
   // Set language from env when running standalone
@@ -363,7 +370,7 @@ if (isDirectRun) {
     setLanguage(process.env.LANGUAGE);
   }
   const __dirname = dirname(__filename);
-  start({ sessionsPath: join(__dirname, 'sessions.json') }).catch(err => {
+  start({ sessionsPath: join(__dirname, 'sessions.json') }).catch((err) => {
     console.error(t('bot.startFailed'), err.message);
     process.exit(1);
   });

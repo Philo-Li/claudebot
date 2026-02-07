@@ -20,9 +20,7 @@ const locales = {
 let currentLang = 'zh';
 
 function t(key, params) {
-  const str = (locales[currentLang] && locales[currentLang][key])
-    || locales.en[key]
-    || key;
+  const str = (locales[currentLang] && locales[currentLang][key]) || locales.en[key] || key;
   if (!params) return str;
   return str.replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? params[k] : `{${k}}`));
 }

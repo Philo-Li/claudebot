@@ -19,10 +19,6 @@ function run(cmd, opts = {}) {
   return execSync(cmd, { stdio: 'inherit', encoding: 'utf-8', ...opts });
 }
 
-function runCapture(cmd) {
-  return execSync(cmd, { encoding: 'utf-8' }).trim();
-}
-
 // --- Parse version arg ---
 const arg = process.argv[2];
 if (!arg) {
@@ -40,9 +36,14 @@ if (/^\d+\.\d+\.\d+$/.test(arg)) {
 } else {
   const parts = oldVersion.split('.').map(Number);
   if (arg === 'patch') parts[2]++;
-  else if (arg === 'minor') { parts[1]++; parts[2] = 0; }
-  else if (arg === 'major') { parts[0]++; parts[1] = 0; parts[2] = 0; }
-  else {
+  else if (arg === 'minor') {
+    parts[1]++;
+    parts[2] = 0;
+  } else if (arg === 'major') {
+    parts[0]++;
+    parts[1] = 0;
+    parts[2] = 0;
+  } else {
     console.error(`无效参数: ${arg}（可用: patch, minor, major, 或具体版本号）`);
     process.exit(1);
   }
@@ -88,6 +89,8 @@ for (const f of [setupExe, blockmap, latestYml]) {
 console.log('\n发布到 GitHub...\n');
 
 const notes = `## ClaudeBot ${tag}`;
-run(`"${GH}" release create ${tag} --repo Philo-Li/claudebot --title "ClaudeBot ${tag}" --notes "${notes}" "${path.join(distDir, setupExe)}" "${path.join(distDir, blockmap)}" "${path.join(distDir, latestYml)}"`);
+run(
+  `"${GH}" release create ${tag} --repo Philo-Li/claudebot --title "ClaudeBot ${tag}" --notes "${notes}" "${path.join(distDir, setupExe)}" "${path.join(distDir, blockmap)}" "${path.join(distDir, latestYml)}"`,
+);
 
 console.log(`\n✓ 发版完成: https://github.com/Philo-Li/claudebot/releases/tag/${tag}\n`);

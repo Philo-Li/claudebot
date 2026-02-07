@@ -11,9 +11,11 @@ Build the app and publish a new version to GitHub Releases for auto-update.
 ### Step 1: Pre-flight Checks
 
 1. Verify working tree is clean:
+
    ```bash
    git status --porcelain
    ```
+
    If there are uncommitted changes, stop and ask the user to commit or stash first.
 
 2. Read current version from `package.json`.
@@ -26,10 +28,13 @@ Build the app and publish a new version to GitHub Releases for auto-update.
 ### Step 2: Generate Changelog
 
 1. Get all commits since the last tag:
+
    ```bash
    git log <last-tag>..HEAD --pretty=format:"%s"
    ```
+
    If there is no previous tag, get the last 20 commits:
+
    ```bash
    git log --oneline -20
    ```
@@ -63,6 +68,7 @@ Build the app and publish a new version to GitHub Releases for auto-update.
 ### Step 3: Confirm Version Number
 
 Use `AskUserQuestion` to present the suggested version bump and let the user choose:
+
 - **patch** (current → next patch)
 - **minor** (current → next minor)
 - **major** (current → next major)
@@ -87,6 +93,7 @@ git tag v{VERSION}
 ### Step 7: Build
 
 Run the Windows build:
+
 ```bash
 npm run build:win
 ```

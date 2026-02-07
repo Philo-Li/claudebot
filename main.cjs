@@ -21,7 +21,6 @@ let splashWindow = null;
 const userDataPath = app.getPath('userData');
 const envPath = path.join(userDataPath, '.env');
 const sessionsPath = path.join(userDataPath, 'sessions.json');
-const envExamplePath = path.join(__dirname, '.env.example');
 
 function getAppIconPath() {
   const name = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
@@ -49,9 +48,8 @@ function updateTray() {
   const statusParts = [];
   if (botRunning) statusParts.push('Telegram');
   if (dopamindRunning) statusParts.push('Dopamind');
-  const statusText = statusParts.length > 0
-    ? t('tray.running', { services: statusParts.join(' + ') })
-    : t('tray.stopped');
+  const statusText =
+    statusParts.length > 0 ? t('tray.running', { services: statusParts.join(' + ') }) : t('tray.stopped');
 
   tray.setToolTip(`ClaudeBot - ${statusText}`);
 
@@ -176,10 +174,7 @@ async function startBot() {
           onError: (errMsg) => {
             dopamindRunning = false;
             updateTray();
-            dialog.showErrorBox(
-              t('dopamind.authErrorTitle'),
-              t('dopamind.authErrorMessage', { message: errMsg }),
-            );
+            dialog.showErrorBox(t('dopamind.authErrorTitle'), t('dopamind.authErrorMessage', { message: errMsg }));
           },
         },
       });
@@ -261,7 +256,16 @@ function parseEnvFile() {
   return result;
 }
 
-function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindApiUrl, dopamindToken, language, allowSkipPermissions }) {
+function writeEnvFile({
+  token,
+  userIds,
+  workDir,
+  dopamindEnabled,
+  dopamindApiUrl,
+  dopamindToken,
+  language,
+  allowSkipPermissions,
+}) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -368,7 +372,9 @@ function showSplash() {
   const envConfig = parseEnvFile();
   const splashLang = envConfig.language || 'zh';
   splashWindow.loadFile(path.join(__dirname, 'splash.html'), { query: { lang: splashLang } });
-  splashWindow.on('closed', () => { splashWindow = null; });
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
 }
 
 function closeSplash() {
@@ -523,9 +529,10 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-downloaded', (info) => {
     manualCheck = false;
-    const releaseNotes = typeof info.releaseNotes === 'string'
-      ? info.releaseNotes
-      : (info.releaseNotes && info.releaseNotes[0] && info.releaseNotes[0].note) || '';
+    const releaseNotes =
+      typeof info.releaseNotes === 'string'
+        ? info.releaseNotes
+        : (info.releaseNotes && info.releaseNotes[0] && info.releaseNotes[0].note) || '';
     showUpdateWindow(info.version, releaseNotes);
   });
 

@@ -38,15 +38,15 @@ ClaudeBot 是一个 Electron 系统托盘应用，提供两种远程控制 Claud
 
 ### 1.3 技术栈
 
-| 组件 | 技术 |
-|------|------|
-| 桌面框架 | Electron |
-| Telegram API | node-telegram-bot-api (polling 模式) |
-| CLI 集成 | child_process.spawn → Claude Code CLI |
-| 模块系统 | ESM (bot.js, claude-runner.js) + CJS (main.cjs, dopamind-client.cjs) |
-| 国际化 | 自定义 i18n.cjs + JSON locale 文件 |
-| 构建打包 | electron-builder |
-| 自动更新 | electron-updater + GitHub Releases |
+| 组件         | 技术                                                                 |
+| ------------ | -------------------------------------------------------------------- |
+| 桌面框架     | Electron                                                             |
+| Telegram API | node-telegram-bot-api (polling 模式)                                 |
+| CLI 集成     | child_process.spawn → Claude Code CLI                                |
+| 模块系统     | ESM (bot.js, claude-runner.js) + CJS (main.cjs, dopamind-client.cjs) |
+| 国际化       | 自定义 i18n.cjs + JSON locale 文件                                   |
+| 构建打包     | electron-builder                                                     |
+| 自动更新     | electron-updater + GitHub Releases                                   |
 
 ---
 
@@ -102,14 +102,15 @@ ClaudeBot/
 
 **IPC 通道：**
 
-| 通道 | 方向 | 说明 |
-|------|------|------|
-| `get-config` | 渲染 → 主 | 获取当前 .env 配置 |
-| `save-config` | 渲染 → 主 | 保存配置并重启服务 |
-| `get-locale` | 渲染 → 主 | 获取当前语言和翻译字符串 |
-| `select-directory` | 渲染 → 主 | 打开目录选择对话框 |
+| 通道               | 方向      | 说明                     |
+| ------------------ | --------- | ------------------------ |
+| `get-config`       | 渲染 → 主 | 获取当前 .env 配置       |
+| `save-config`      | 渲染 → 主 | 保存配置并重启服务       |
+| `get-locale`       | 渲染 → 主 | 获取当前语言和翻译字符串 |
+| `select-directory` | 渲染 → 主 | 打开目录选择对话框       |
 
 **托盘菜单项：**
+
 - 启动/停止服务
 - 打开设置窗口
 - 退出应用
@@ -120,18 +121,18 @@ ClaudeBot/
 
 **命令列表：**
 
-| 命令 | 格式 | 功能 |
-|------|------|------|
-| `/start` | `/start` | 显示帮助信息和当前工作目录 |
-| `/new` | `/new` | 清除当前会话，重置上下文 |
-| `/usage` | `/usage` | 显示上下文/输出/费用统计 |
-| `/ask` | `/ask <问题>` | 向 Claude 提问 |
-| `/run` | `/run <指令>` | 让 Claude 执行编程任务 |
-| `/stop` | `/stop` | 停止当前运行的任务 |
-| `/dir` | `/dir` | 查看当前工作目录 |
-| `/setdir` | `/setdir <路径>` | 切换工作目录 |
-| `/status` | `/status` | 显示状态、工作目录、用户 ID |
-| 纯文本 | 直接发送 | 作为 prompt 发送给 Claude（保持上下文） |
+| 命令      | 格式             | 功能                                    |
+| --------- | ---------------- | --------------------------------------- |
+| `/start`  | `/start`         | 显示帮助信息和当前工作目录              |
+| `/new`    | `/new`           | 清除当前会话，重置上下文                |
+| `/usage`  | `/usage`         | 显示上下文/输出/费用统计                |
+| `/ask`    | `/ask <问题>`    | 向 Claude 提问                          |
+| `/run`    | `/run <指令>`    | 让 Claude 执行编程任务                  |
+| `/stop`   | `/stop`          | 停止当前运行的任务                      |
+| `/dir`    | `/dir`           | 查看当前工作目录                        |
+| `/setdir` | `/setdir <路径>` | 切换工作目录                            |
+| `/status` | `/status`        | 显示状态、工作目录、用户 ID             |
+| 纯文本    | 直接发送         | 作为 prompt 发送给 Claude（保持上下文） |
 
 **进度展示逻辑：**
 
@@ -151,20 +152,16 @@ ClaudeBot/
 **CLI 调用方式：**
 
 ```javascript
-spawn(claudePath, [
-  '-p', prompt,
-  '--output-format', 'stream-json',
-  '--dangerously-skip-permissions',
-  '--verbose'
-], {
+spawn(claudePath, ['-p', prompt, '--output-format', 'stream-json', '--dangerously-skip-permissions', '--verbose'], {
   cwd: workDir,
   env: { ...process.env, FORCE_COLOR: '0' },
   stdio: ['ignore', 'pipe', 'pipe'],
-  windowsHide: true
-})
+  windowsHide: true,
+});
 ```
 
 关键参数：
+
 - `--output-format stream-json` — NDJSON 流式输出，支持实时进度
 - `--dangerously-skip-permissions` — 跳过权限确认（远程场景需要）
 - `stdio: ['ignore', 'pipe', 'pipe']` — stdin 关闭防止挂起
@@ -174,23 +171,23 @@ spawn(claudePath, [
 
 Claude CLI 以 NDJSON（每行一个 JSON）格式输出，消息类型包括：
 
-| type | 说明 |
-|------|------|
-| `system` | 系统消息，包含 session_id、模型信息 |
-| `assistant` | Claude 的响应（文本或工具调用） |
-| `user` | 工具执行结果 |
-| `result` | 最终结果，包含 usage、cost、session_id |
+| type        | 说明                                   |
+| ----------- | -------------------------------------- |
+| `system`    | 系统消息，包含 session_id、模型信息    |
+| `assistant` | Claude 的响应（文本或工具调用）        |
+| `user`      | 工具执行结果                           |
+| `result`    | 最终结果，包含 usage、cost、session_id |
 
 **进度提取：** 从 assistant 消息中提取工具调用详情：
 
-| 工具 | 提取字段 |
-|------|---------|
-| Read / Edit / Write | `file_path` |
-| Bash | `command` |
-| Glob / Grep | `pattern` |
-| WebSearch | `query` |
-| WebFetch | `url` |
-| 文本输出 | 前 200 字符预览 |
+| 工具                | 提取字段        |
+| ------------------- | --------------- |
+| Read / Edit / Write | `file_path`     |
+| Bash                | `command`       |
+| Glob / Grep         | `pattern`       |
+| WebSearch           | `query`         |
+| WebFetch            | `url`           |
+| 文本输出            | 前 200 字符预览 |
 
 **会话管理：**
 
@@ -208,6 +205,7 @@ Claude CLI 以 NDJSON（每行一个 JSON）格式输出，消息类型包括：
 - 收到 `result` 消息时自动保存 session_id
 
 **用量追踪：** 每个会话独立记录：
+
 - 上下文 token 数 / 上下文窗口总量（百分比）
 - 输出 token 数
 - 累计费用（USD）
@@ -215,10 +213,10 @@ Claude CLI 以 NDJSON（每行一个 JSON）格式输出，消息类型包括：
 
 **自动重试机制：**
 
-| 错误类型 | 策略 |
-|---------|------|
-| 上下文溢出 ("Prompt is too long") | 删除会话 → 重试 1 次 |
-| API 5xx / overloaded | 等待 5 秒 → 最多重试 2 次 |
+| 错误类型                          | 策略                      |
+| --------------------------------- | ------------------------- |
+| 上下文溢出 ("Prompt is too long") | 删除会话 → 重试 1 次      |
+| API 5xx / overloaded              | 等待 5 秒 → 最多重试 2 次 |
 
 ### 3.4 dopamind-client.cjs — Dopamind 客户端
 
@@ -249,11 +247,11 @@ GET /api/desktop-queue/poll?limit=1
 
 **API 端点：**
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/desktop-queue/poll?limit=1` | 拉取待处理消息 |
-| POST | `/api/desktop-queue/progress` | 上报执行进度 |
-| POST | `/api/desktop-queue/respond` | 上报最终结果 |
+| 方法 | 路径                              | 说明           |
+| ---- | --------------------------------- | -------------- |
+| GET  | `/api/desktop-queue/poll?limit=1` | 拉取待处理消息 |
+| POST | `/api/desktop-queue/progress`     | 上报执行进度   |
+| POST | `/api/desktop-queue/respond`      | 上报最终结果   |
 
 ### 3.5 config.html — 设置界面
 
@@ -261,16 +259,17 @@ GET /api/desktop-queue/poll?limit=1
 
 **配置项：**
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| 语言 | 下拉选择 | 中文 / English |
-| Telegram Bot Token | 密码输入框 | 从 @BotFather 获取 |
-| 允许的用户 ID | 文本输入框 | 逗号分隔的 Telegram 用户 ID |
-| 工作目录 | 文本 + 浏览按钮 | Claude CLI 的工作目录 |
-| Dopamind 开关 | 开关 | 启用/禁用 Dopamind 客户端 |
-| Dopamind Token | 文本输入框 | 设备认证令牌 |
+| 字段               | 类型            | 说明                        |
+| ------------------ | --------------- | --------------------------- |
+| 语言               | 下拉选择        | 中文 / English              |
+| Telegram Bot Token | 密码输入框      | 从 @BotFather 获取          |
+| 允许的用户 ID      | 文本输入框      | 逗号分隔的 Telegram 用户 ID |
+| 工作目录           | 文本 + 浏览按钮 | Claude CLI 的工作目录       |
+| Dopamind 开关      | 开关            | 启用/禁用 Dopamind 客户端   |
+| Dopamind Token     | 文本输入框      | 设备认证令牌                |
 
 **安全措施：**
+
 - `contextIsolation: true` — 渲染进程与主进程隔离
 - `nodeIntegration: false` — 渲染进程无法直接访问 Node.js
 - 通过 `contextBridge` 仅暴露白名单 IPC 方法
@@ -387,13 +386,14 @@ function findClaude() {
 
 ### 6.1 构建配置 (electron-builder.yml)
 
-| 平台 | 目标格式 | 架构 |
-|------|---------|------|
-| Windows | NSIS 安装包 | x64 |
-| macOS | DMG | x64 + arm64 |
-| Linux | AppImage + deb | — |
+| 平台    | 目标格式       | 架构        |
+| ------- | -------------- | ----------- |
+| Windows | NSIS 安装包    | x64         |
+| macOS   | DMG            | x64 + arm64 |
+| Linux   | AppImage + deb | —           |
 
 特殊配置：
+
 - `asar: false` — 不压缩资源（便于调试）
 - `afterPack: fix-modules.cjs` — 构建后补全缺失的生产依赖
 - macOS `LSUIElement: true` — 隐藏 Dock 图标（纯托盘应用）
@@ -401,6 +401,7 @@ function findClaude() {
 ### 6.2 fix-modules.cjs — 依赖修复钩子
 
 electron-builder 的依赖树分析有时遗漏 hoisted 模块。此钩子在打包后：
+
 1. 运行 `npm ls --prod --all --parseable` 获取完整生产依赖列表
 2. 对比打包后的 `resources/app/node_modules`
 3. 复制缺失的模块到打包目录
@@ -428,36 +429,40 @@ npm run release -- 2.1.0   # 指定版本号
 
 存储位置：`%APPDATA%/ClaudeBot/.env`（Windows）或 `~/Library/Application Support/ClaudeBot/.env`（macOS）
 
-| 变量 | 必填 | 默认值 | 说明 |
-|------|------|--------|------|
-| `TELEGRAM_BOT_TOKEN` | 是 | — | Telegram Bot Token |
-| `ALLOWED_USER_IDS` | 推荐 | 允许所有人 | 逗号分隔的 Telegram 用户 ID |
-| `WORK_DIR` | 否 | 当前目录 | Claude CLI 工作目录 |
-| `DOPAMIND_ENABLED` | 否 | `false` | 启用 Dopamind 客户端 |
-| `DOPAMIND_TOKEN` | 否 | — | Dopamind 设备令牌 |
-| `DOPAMIND_API_URL` | 否 | `https://api.dopamind.app` | Dopamind API 地址 |
-| `LANGUAGE` | 否 | `zh` | 界面语言 (`zh` / `en`) |
+| 变量                 | 必填 | 默认值                     | 说明                        |
+| -------------------- | ---- | -------------------------- | --------------------------- |
+| `TELEGRAM_BOT_TOKEN` | 是   | —                          | Telegram Bot Token          |
+| `ALLOWED_USER_IDS`   | 推荐 | 允许所有人                 | 逗号分隔的 Telegram 用户 ID |
+| `WORK_DIR`           | 否   | 当前目录                   | Claude CLI 工作目录         |
+| `DOPAMIND_ENABLED`   | 否   | `false`                    | 启用 Dopamind 客户端        |
+| `DOPAMIND_TOKEN`     | 否   | —                          | Dopamind 设备令牌           |
+| `DOPAMIND_API_URL`   | 否   | `https://api.dopamind.app` | Dopamind API 地址           |
+| `LANGUAGE`           | 否   | `zh`                       | 界面语言 (`zh` / `en`)      |
 
 ---
 
 ## 8. 安全设计
 
 ### 8.1 访问控制
+
 - `ALLOWED_USER_IDS` 限制授权的 Telegram 用户
 - 未配置时所有人可用（启动时输出警告）
 - Telegram 用户 ID 由平台分配，无法伪造
 
 ### 8.2 Electron 安全
+
 - 设置窗口启用 `contextIsolation` 和禁用 `nodeIntegration`
 - 通过 `preload-config.cjs` + `contextBridge` 仅暴露白名单 IPC 方法
 - 配置文件存储在系统用户数据目录，不随代码分发
 
 ### 8.3 敏感信息
+
 - `.env` 文件不提交到 Git（存储在 userData 路径）
 - Bot Token、用户 ID 等敏感信息仅通过设置界面配置
 - **不要** 在文档或代码中硬编码真实 Token
 
 ### 8.4 Claude CLI 权限
+
 - 使用 `--dangerously-skip-permissions` 跳过交互式权限确认
 - 建议将 `WORK_DIR` 限制在特定项目目录以缩小操作范围
 
@@ -468,6 +473,7 @@ npm run release -- 2.1.0   # 指定版本号
 ### 9.1 安装包方式（推荐）
 
 从 [GitHub Releases](https://github.com/Philo-Li/claudebot/releases) 下载对应平台安装包：
+
 - Windows：`.exe` (NSIS 安装包)
 - macOS：`.dmg`
 - Linux：`.AppImage` 或 `.deb`
@@ -515,19 +521,25 @@ npm start
 ## 10. 常见问题
 
 ### Q: 启动后报错 "Claude Code on Windows requires git-bash"
+
 确保安装了 Git for Windows。如果安装在非标准路径，设置环境变量 `CLAUDE_CODE_GIT_BASH_PATH` 指向 `bash.exe`。
 
 ### Q: 发送消息后一直显示"处理中"
+
 检查 Claude CLI 是否正常工作：在终端执行 `claude -p "hello" --output-format stream-json`，确认有输出。
 
 ### Q: 如何同时使用 Telegram 和 Dopamind？
+
 在设置中填写 Telegram Token，同时开启 Dopamind 开关并填写设备令牌。两个客户端独立运行，共享 claude-runner 模块。
 
 ### Q: 会话上下文如何工作？
+
 每个用户（Telegram chatId / Dopamind userId）维护独立会话。会话 ID 存储在 `sessions.json`，通过 `--resume` 参数恢复上下文。使用 `/new` 命令可清除当前会话。
 
 ### Q: 上下文溢出怎么办？
+
 claude-runner 会自动检测 "Prompt is too long" 错误，删除当前会话并以新会话重试一次。
 
 ### Q: 每次调用费用大约多少？
+
 简单问答约 $0.01–0.05，复杂编程任务约 $0.05–0.50。每次回复附带费用信息，使用 `/usage` 可查看累计统计。

@@ -90,7 +90,9 @@ async function pollOnce(config) {
  * Process a single queued message
  */
 async function processMessage(config, msg) {
-  console.log(`[Dopamind] Processing message ${msg.id} (conversationId=${msg.conversationId || 'none'}): ${msg.prompt.slice(0, 80)}...`);
+  console.log(
+    `[Dopamind] Processing message ${msg.id} (conversationId=${msg.conversationId || 'none'}): ${msg.prompt.slice(0, 80)}...`,
+  );
 
   // Progress step buffer
   const progressSteps = [];
@@ -134,9 +136,7 @@ async function processMessage(config, msg) {
       claudeRunner = await import('./claude-runner.js');
     }
 
-    const sessionKey = msg.conversationId
-      ? `dopamind_${msg.userId}_${msg.conversationId}`
-      : `dopamind_${msg.userId}`;
+    const sessionKey = msg.conversationId ? `dopamind_${msg.userId}_${msg.conversationId}` : `dopamind_${msg.userId}`;
     const workDir = msg.workDir || config.defaultWorkDir || process.cwd();
 
     const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress, {
@@ -156,7 +156,7 @@ async function processMessage(config, msg) {
     if (result.success) {
       const usage = claudeRunner.getSessionUsage(sessionKey);
       if (usage && usage.contextWindow) {
-        const remaining = (100 - usage.contextTokens / usage.contextWindow * 100).toFixed(0);
+        const remaining = (100 - (usage.contextTokens / usage.contextWindow) * 100).toFixed(0);
         response += `\n[context] ${remaining}% remaining`;
       }
     }
@@ -170,7 +170,9 @@ async function processMessage(config, msg) {
       errorMessage: result.success ? undefined : result.output,
     });
 
-    console.log(`[Dopamind] Message ${msg.id} completed (success=${result.success})${result.success ? '' : ' output=' + (result.output || '').slice(0, 200)}`);
+    console.log(
+      `[Dopamind] Message ${msg.id} completed (success=${result.success})${result.success ? '' : ' output=' + (result.output || '').slice(0, 200)}`,
+    );
   } catch (err) {
     if (err.name === 'AbortError') {
       console.error(`[Dopamind] Message ${msg.id} timeout`);
