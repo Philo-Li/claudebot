@@ -550,9 +550,10 @@ app.whenReady().then(async () => {
   // Close splash after startup completes
   closeSplash();
 
-  // Setup and check for updates
+  // Setup and check for updates (also re-check every 24 hours)
   setupAutoUpdater();
   autoUpdater.checkForUpdatesAndNotify();
+  setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 24 * 60 * 60 * 1000);
 });
 
 // Keep app running when all windows are closed (tray-only)
