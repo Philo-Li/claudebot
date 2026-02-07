@@ -76,7 +76,7 @@ async function pollOnce(config) {
  * Process a single queued message
  */
 async function processMessage(config, msg) {
-  console.log(`[Dopamind] Processing message ${msg.id}: ${msg.prompt.slice(0, 80)}...`);
+  console.log(`[Dopamind] Processing message ${msg.id} (conversationId=${msg.conversationId || 'none'}): ${msg.prompt.slice(0, 80)}...`);
 
   // Progress step buffer
   const progressSteps = [];
@@ -121,7 +121,7 @@ async function processMessage(config, msg) {
       : `dopamind_${msg.userId}`;
     const workDir = msg.workDir || config.defaultWorkDir || process.cwd();
 
-    const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress);
+    const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress, { editDetails: true });
 
     // Final progress flush
     if (progressFlushTimer) {

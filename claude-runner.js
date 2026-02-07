@@ -197,14 +197,18 @@ export function resetSessionUsage(sessionKey) {
 
 // ============== Stream message handler ==============
 
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.slice(0, max) + '...' : str;
+}
+
 function getToolDetail(toolName, input) {
   switch (toolName) {
     case 'Read':  return input.file_path || '';
-    case 'Edit':  return input.file_path || '';
     case 'Write': return input.file_path || '';
     case 'Bash': {
       const cmd = input.command || '';
-      return cmd.slice(0, 80) + (cmd.length > 80 ? '...' : '');
+      return truncate(cmd, 80);
     }
     case 'Glob':      return input.pattern || '';
     case 'Grep':      return input.pattern || '';
@@ -215,7 +219,25 @@ function getToolDetail(toolName, input) {
   }
 }
 
-export function handleStreamMessage(msg, sessionKey, onProgress) {
+function getEditDetail(input) {
+  const file = input.file_path || '';
+  const old_str = input.old_string || '';
+  const new_str = input.new_string || '';
+  if (!old_str && !new_str) return file;
+  const lines = [`[edit:start] ${file}`];
+  if (old_str) {
+    lines.push('[edit:old]');
+    lines.push(old_str);
+  }
+  if (new_str) {
+    lines.push('[edit:new]');
+    lines.push(new_str);
+  }
+  lines.push('[edit:end]');
+  return lines.join('\n');
+}
+
+export function handleStreamMessage(msg, sessionKey, onProgress, opts = {}) {
   if (!onProgress) return;
 
   if (msg.type === 'system') {
@@ -235,6 +257,15 @@ export function handleStreamMessage(msg, sessionKey, onProgress) {
 
     for (const block of msg.message.content) {
       if (block.type === 'tool_use') {
+        if (block.name === 'Edit') {
+          flushTool();
+          if (opts.editDetails) {
+            onProgress(getEditDetail(block.input || {}));
+          } else {
+            onProgress(`[tool:edit] ${block.input?.file_path || ''}`);
+          }
+          continue;
+        }
         const detail = getToolDetail(block.name, block.input || {});
         if (block.name === lastTool) {
           lastDetails.push(detail);
@@ -262,9 +293,9 @@ const MAX_API_RETRIES = 2;
 const API_RETRY_DELAY = 5000;
 const API_RETRY_PATTERN = /API Error: 5\d{2}\b|"type":"api_error"|overloaded/;
 
-export async function callClaude(sessionKey, prompt, workDir, onProgress, _retryState) {
+export async function callClaude(sessionKey, prompt, workDir, onProgress, opts = {}) {
   sessionKey = String(sessionKey);
-  const retryState = _retryState || { contextRetried: false, apiRetries: 0 };
+  const retryState = opts._retryState || { contextRetried: false, apiRetries: 0 };
   return new Promise((resolve) => {
     const sessionId = sessions.get(sessionKey);
     const args = [
@@ -325,7 +356,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retry
             };
           }
 
-          handleStreamMessage(msg, sessionKey, onProgress);
+          handleStreamMessage(msg, sessionKey, onProgress, opts);
         } catch {}
       }
     });
@@ -356,7 +387,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retry
               cost: msg.total_cost_usd
             };
           }
-          handleStreamMessage(msg, sessionKey, onProgress);
+          handleStreamMessage(msg, sessionKey, onProgress, opts);
         } catch {}
       }
 
@@ -368,7 +399,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retry
         sessions.delete(sessionKey);
         resetSessionUsage(sessionKey);
         saveSessions();
-        resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...retryState, contextRetried: true }));
+        resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...opts, _retryState: { ...retryState, contextRetried: true } }));
         return;
       }
 
@@ -378,7 +409,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, _retry
         console.log(`[${new Date().toISOString()}] API 错误，${API_RETRY_DELAY / 1000}s 后重试 (${attempt}/${MAX_API_RETRIES})`);
         if (onProgress) onProgress(`[status:processing] retry ${attempt}/${MAX_API_RETRIES}...`);
         setTimeout(() => {
-          resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...retryState, apiRetries: attempt }));
+          resolve(callClaude(sessionKey, prompt, workDir, onProgress, { ...opts, _retryState: { ...retryState, apiRetries: attempt } }));
         }, API_RETRY_DELAY);
         return;
       }
