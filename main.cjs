@@ -23,6 +23,11 @@ const envPath = path.join(userDataPath, '.env');
 const sessionsPath = path.join(userDataPath, 'sessions.json');
 const envExamplePath = path.join(__dirname, '.env.example');
 
+function getAppIconPath() {
+  const name = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  return path.join(__dirname, 'assets', name);
+}
+
 function getIconPath(running) {
   const name = running ? 'tray-running.png' : 'tray-stopped.png';
   // In packaged app, resources are in app.asar
@@ -287,6 +292,7 @@ function showConfigWindow() {
     maximizable: false,
     minimizable: false,
     fullscreenable: false,
+    icon: getAppIconPath(),
     title: t('tray.settings'),
     webPreferences: {
       preload: path.join(__dirname, 'preload-config.cjs'),
@@ -345,6 +351,7 @@ function showSplash() {
     alwaysOnTop: true,
     skipTaskbar: true,
     center: true,
+    icon: getAppIconPath(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -412,6 +419,7 @@ function showUpdateWindow(version, releaseNotes) {
     maximizable: false,
     minimizable: false,
     fullscreenable: false,
+    icon: getAppIconPath(),
     title: t('update.changelogTitle'),
     webPreferences: {
       contextIsolation: true,
