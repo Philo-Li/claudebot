@@ -69,6 +69,11 @@ jobs:
           merge-multiple: true
 
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          for file in artifacts/dist/*; do
+            echo "Uploading $(basename "$file")..."
+            gh release upload "$tag" "$file" --repo "$GITHUB_REPOSITORY" --clobber
+          done
