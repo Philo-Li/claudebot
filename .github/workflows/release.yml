@@ -68,12 +68,15 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: List downloaded artifacts
+        run: find artifacts -type f
+
       - name: Upload to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          for file in artifacts/dist/*; do
+          find artifacts -type f | while read -r file; do
             echo "Uploading $(basename "$file")..."
             gh release upload "$tag" "$file" --repo "$GITHUB_REPOSITORY" --clobber
           done
