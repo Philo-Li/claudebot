@@ -47,8 +47,11 @@ jobs:
         with:
           files: |
             dist/*.exe
+            dist/*.exe.blockmap
             dist/*.dmg
+            dist/*.dmg.blockmap
             dist/*.AppImage
             dist/*.deb
-            dist/*.yml
-            dist/*.yaml
+            dist/latest.yml
+            dist/latest-mac.yml
+            dist/latest-linux.yml

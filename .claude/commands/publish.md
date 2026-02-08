@@ -1,10 +1,10 @@
 ---
-description: Build and publish a new release to GitHub Releases
+description: Bump version, create GitHub Release, and let CI build & upload artifacts
 ---
 
 # Publish Release
 
-Build the app and publish a new version to GitHub Releases for auto-update.
+Bump the version, generate a changelog, create a GitHub Release with release notes, and push a tag to trigger CI builds. The CI workflow (`.github/workflows/release.yml`) handles building on all platforms and uploading artifacts.
 
 ## Workflow
 
@@ -39,19 +39,19 @@ Build the app and publish a new version to GitHub Releases for auto-update.
    git log --oneline -20
    ```
 
-2. Parse commits by Conventional Commits prefixes and categorize into Chinese sections:
+2. Parse commits by Conventional Commits prefixes and categorize into English sections:
 
    ```
-   ## 🚀 新功能
+   ## New Features
    - <description from feat commits>
 
-   ## ⚡ 改进
+   ## Improvements
    - <description from refactor/perf/style commits>
 
-   ## 🐛 修复
+   ## Bug Fixes
    - <description from fix commits>
 
-   ## 🔧 其他
+   ## Other
    - <description from chore/docs/test/ci commits>
    ```
 
@@ -82,39 +82,21 @@ Show the generated changelog to the user and ask them to confirm or modify it us
 
 Write the new version number into `package.json`'s `version` field.
 
-### Step 6: Commit and Tag
+### Step 6: Commit, Tag, and Push
 
 ```bash
 git add package.json
 git commit -m "chore: bump version to {VERSION}"
 git tag v{VERSION}
+git push origin main --tags
 ```
 
-### Step 7: Build
+### Step 7: Create GitHub Release
 
-Run the Windows build:
-
-```bash
-npm run build:win
-```
-
-If the build fails, diagnose the error, fix it, and retry.
-
-### Step 8: Push
-
-```bash
-git push origin master --tags
-```
-
-### Step 9: Create GitHub Release
-
-Upload the 3 build artifacts with the changelog as release notes body:
+Create the release with changelog as notes — **do NOT upload any files**. CI will build and upload artifacts automatically.
 
 ```bash
 gh release create v{VERSION} \
-  "dist/ClaudeBot Setup {VERSION}.exe" \
-  "dist/ClaudeBot Setup {VERSION}.exe.blockmap" \
-  "dist/latest.yml" \
   --repo Philo-Li/claudebot \
   --title "ClaudeBot v{VERSION}" \
   --notes "{CHANGELOG}"
@@ -122,20 +104,21 @@ gh release create v{VERSION} \
 
 Important: The `--notes` body is what `electron-updater` shows as `info.releaseNotes` in the auto-update popup. Use the changelog generated in Step 2.
 
-### Step 10: Summary
+### Step 8: Summary
 
 After publishing, show a summary:
 
 ```
-✅ 发版完成
+发版完成
 
 版本:    {VERSION}
 标签:    v{VERSION}
-产物:    ClaudeBot Setup {VERSION}.exe, .blockmap, latest.yml
 地址:    https://github.com/Philo-Li/claudebot/releases/tag/v{VERSION}
 
 更新日志:
 {CHANGELOG}
+
+CI 正在构建产物，构建完成后会自动上传到 Release。
 ```
 
-Remind the user that installed apps with auto-update will pick up this release automatically.
+Remind the user to check the Actions tab to monitor CI build progress.
