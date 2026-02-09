@@ -30,7 +30,7 @@ afterPack: ./fix-modules.cjs
 
 win:
   icon: assets/icon.ico
-  signAndEditExecutable: false
+
   target:
     - target: nsis
       arch:
