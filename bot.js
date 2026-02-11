@@ -240,11 +240,6 @@ function registerHandlers() {
     }
   });
 
-  bot.onText(/\/dir$/, (msg) => {
-    if (!isAllowed(msg.from.id)) return;
-    bot.sendMessage(msg.chat.id, t('bot.currentWorkDir', { dir: config.workDir }));
-  });
-
   bot.onText(/\/setdir (.+)/, (msg, match) => {
     if (!isAllowed(msg.from.id)) return;
     const newDir = match[1].trim();

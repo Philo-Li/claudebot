@@ -61,17 +61,15 @@ ClaudeBot will pass your message to Claude Code and send the result back to Tele
 
 ## Telegram Commands
 
-| Command              | Description                         |
-| -------------------- | ----------------------------------- |
-| `/ask <question>`    | Ask Claude a question               |
-| `/run <instruction>` | Have Claude execute a task          |
-| `/new`               | Start a new session (clear context) |
-| `/stop`              | Stop the currently running task     |
-| `/dir`               | View the current working directory  |
-| `/setdir <path>`     | Set the working directory           |
-| `/status`            | View bot status                     |
+Just send a message — no command needed. ClaudeBot passes it to Claude Code and streams the result back. Session context is preserved automatically.
 
-Plain messages (without `/`) are also sent to Claude as prompts, with session context preserved automatically.
+| Command          | Description                                          |
+| ---------------- | ---------------------------------------------------- |
+| `/new`           | Start a new session (clear context)                  |
+| `/stop`          | Stop the currently running task                      |
+| `/usage`         | View token usage, cost, and context window           |
+| `/status`        | View bot status (includes working directory)         |
+| `/setdir <path>` | Set working directory (temporary, resets on restart) |
 
 ## Dopamind Integration
 
