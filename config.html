@@ -160,12 +160,6 @@
     <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
   </div>
 
-  <div class="field">
-    <label data-i18n="config.dopamindApiUrlLabel">API URL</label>
-    <div class="hint" data-i18n="config.dopamindApiUrlHint">默认 https://api.dopamind.app</div>
-    <input type="text" id="dopamindApiUrl" placeholder="https://api.dopamind.app" spellcheck="false" autocomplete="off">
-  </div>
-
   <div class="actions">
     <button type="button" id="saveBtn" data-i18n="config.save">保存</button>
   </div>
@@ -217,7 +211,6 @@
         // Dopamind fields
         document.getElementById('dopamindEnabled').checked = config.dopamindEnabled === 'true';
         if (config.dopamindToken) document.getElementById('dopamindToken').value = config.dopamindToken;
-        if (config.dopamindApiUrl) document.getElementById('dopamindApiUrl').value = config.dopamindApiUrl;
         updateDopamindFieldsState();
       } catch (e) {
         // No existing config, fields stay empty
@@ -244,7 +237,6 @@
           workDir: document.getElementById('workDir').value.trim(),
           dopamindEnabled: document.getElementById('dopamindEnabled').checked ? 'true' : 'false',
           dopamindToken: document.getElementById('dopamindToken').value.trim(),
-          dopamindApiUrl: document.getElementById('dopamindApiUrl').value.trim(),
           language: document.getElementById('language').value,
           allowSkipPermissions: document.getElementById('allowSkipPermissions').checked ? 'true' : 'false',
         });

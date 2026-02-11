@@ -18,6 +18,7 @@ let dopamindRunning = false;
 let configWindow = null;
 let splashWindow = null;
 
+const DOPAMIND_API_URL = 'https://api.dopamind.app';
 const userDataPath = app.getPath('userData');
 const envPath = path.join(userDataPath, '.env');
 const sessionsPath = path.join(userDataPath, 'sessions.json');
@@ -167,7 +168,7 @@ async function startBot() {
 
       await dopamindClient.start({
         dopamindConfig: {
-          apiUrl: envConfig.dopamindApiUrl || 'https://api.dopamind.app',
+          apiUrl: DOPAMIND_API_URL,
           token: envConfig.dopamindToken,
           defaultWorkDir: envConfig.workDir || process.cwd(),
           allowSkipPermissions: (envConfig.allowSkipPermissions || 'true') === 'true',
@@ -230,7 +231,6 @@ function parseEnvFile() {
     userIds: '',
     workDir: '',
     dopamindEnabled: '',
-    dopamindApiUrl: '',
     dopamindToken: '',
     language: '',
     allowSkipPermissions: 'true',
@@ -248,7 +248,6 @@ function parseEnvFile() {
     else if (key === 'ALLOWED_USER_IDS') result.userIds = val;
     else if (key === 'WORK_DIR') result.workDir = val;
     else if (key === 'DOPAMIND_ENABLED') result.dopamindEnabled = val;
-    else if (key === 'DOPAMIND_API_URL') result.dopamindApiUrl = val;
     else if (key === 'DOPAMIND_TOKEN') result.dopamindToken = val;
     else if (key === 'LANGUAGE') result.language = val;
     else if (key === 'ALLOW_SKIP_PERMISSIONS') result.allowSkipPermissions = val;
@@ -256,16 +255,7 @@ function parseEnvFile() {
   return result;
 }
 
-function writeEnvFile({
-  token,
-  userIds,
-  workDir,
-  dopamindEnabled,
-  dopamindApiUrl,
-  dopamindToken,
-  language,
-  allowSkipPermissions,
-}) {
+function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken, language, allowSkipPermissions }) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -278,7 +268,6 @@ function writeEnvFile({
     '',
     '# Dopamind Integration',
     `DOPAMIND_ENABLED=${dopamindEnabled || 'false'}`,
-    `DOPAMIND_API_URL=${dopamindApiUrl || ''}`,
     `DOPAMIND_TOKEN=${dopamindToken || ''}`,
     '',
     '# Allow skip permissions (dangerous)',
