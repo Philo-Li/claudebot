@@ -82,7 +82,7 @@ ClaudeBot can connect to the [Dopamind](https://dopamind.app) platform to receiv
 3. Enter the **Device Token** from the Dopamind app (format: `dpm_...`)
 4. Save and restart
 
-Once enabled, ClaudeBot polls the Dopamind queue every second, processes incoming tasks via Claude Code, and posts progress and results back.
+Once enabled, ClaudeBot continuously polls the Dopamind queue in real time, processes incoming tasks via Claude Code, and posts progress and results back.
 
 ## Tray Menu
 

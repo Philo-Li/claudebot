@@ -82,7 +82,7 @@ ClaudeBot 支持接入 [Dopamind](https://dopamind.app) 平台，从云端队列
 3. 填入从 Dopamind App 获取的 **Device Token**（格式如 `dpm_...`）
 4. 保存并重启
 
-启用后，ClaudeBot 会每秒轮询一次 Dopamind 队列，自动处理收到的任务，并将进度和结果回传。
+启用后，ClaudeBot 会实时查询 Dopamind 队列，自动处理收到的任务，并将进度和结果回传。
 
 ## 托盘菜单
 
