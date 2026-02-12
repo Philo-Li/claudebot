@@ -544,6 +544,16 @@ function setupAutoUpdater() {
 }
 
 app.whenReady().then(async () => {
+  // Fix PATH on macOS for GUI apps (volta/nvm/fnm paths not inherited from shell)
+  if (process.platform === 'darwin') {
+    try {
+      const { default: fixPath } = await import('fix-path');
+      fixPath();
+    } catch (err) {
+      console.error('Failed to fix PATH:', err);
+    }
+  }
+
   // Show splash immediately for user feedback
   showSplash();
 
