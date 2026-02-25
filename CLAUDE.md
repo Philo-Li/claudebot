@@ -55,11 +55,77 @@ npm run build:linux    # Linux (AppImage + deb)
 
 ## Architecture Notes
 
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Electron Shell                           │
+│                         (main.cjs)                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ System Tray │  │ Config IPC  │  │ Bot Lifecycle Manager   │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+┌──────────────────────────┐    ┌──────────────────────────┐
+│      Telegram Bot        │    │    Dopamind Client       │
+│        (bot.js)          │    │  (dopamind-client.cjs)   │
+│                          │    │                          │
+│  • /ask, /run, /new      │    │  • HTTP polling (3s)     │
+│  • /stop, /status        │    │  • Progress reporting    │
+│  • /dir, /setdir         │    │  • Result posting        │
+└──────────────────────────┘    └──────────────────────────┘
+              │                               │
+              └───────────────┬───────────────┘
+                              ▼
+              ┌──────────────────────────────┐
+              │      Claude Runner           │
+              │    (claude-runner.js)        │
+              │                              │
+              │  • Spawn claude -p           │
+              │  • Stream JSON parsing       │
+              │  • Session management        │
+              │  • Progress callbacks        │
+              └──────────────────────────────┘
+                              │
+                              ▼
+              ┌──────────────────────────────┐
+              │       Claude Code CLI        │
+              │  (child_process.spawn)       │
+              │                              │
+              │  --output-format stream-json │
+              │  --resume (session ID)       │
+              └──────────────────────────────┘
+```
+
+### Module Descriptions
+
 - **main.cjs** — Electron main process. Creates system tray, manages bot lifecycle, settings window via IPC
 - **bot.js** — Telegram bot. Registers command handlers (/ask, /run, /new, /stop, /dir, /setdir, /status). Plain messages also sent to Claude
 - **claude-runner.js** — Core module. Spawns `claude -p` with `--output-format stream-json`, manages sessions (resume via session ID), parses streaming progress
 - **dopamind-client.cjs** — Polls Dopamind API `/api/desktop-queue/poll` every 3s, processes messages via claude-runner, posts progress and results back
 - **Config** is stored in `%APPDATA%/ClaudeBot/.env` (Electron userData path), not in the repo
+
+### Data Flow
+
+1. **Input**: User sends message via Telegram or Dopamind queues a prompt
+2. **Processing**: Bot/Client receives message → calls `claude-runner.js`
+3. **Execution**: Runner spawns Claude CLI with streaming output
+4. **Streaming**: JSON events parsed in real-time → progress callbacks fired
+5. **Output**: Final result sent back to Telegram/Dopamind API
+
+### Module System (ESM + CJS)
+
+| File | Type | Reason |
+|------|------|--------|
+| main.cjs | CommonJS | Electron main process requirement |
+| preload-config.cjs | CommonJS | Electron preload requirement |
+| dopamind-client.cjs | CommonJS | Spawned by Electron main |
+| bot.js | ESM | Modern JS, async/await |
+| claude-runner.js | ESM | Shared core module |
+
+CJS modules use dynamic `import()` to load ESM modules.
 
 ## Environment Variables
 
