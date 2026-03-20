@@ -356,6 +356,29 @@ ipcMain.handle('select-directory', async () => {
   return result.filePaths[0];
 });
 
+// ── QR Code Pairing IPC ──
+
+ipcMain.handle('create-pairing', async () => {
+  const res = await fetch(`${DOPAMIND_API_URL}/api/devices/pairing/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Pairing create failed: ${res.status}`);
+  return res.json();
+});
+
+ipcMain.handle('poll-pairing', async (_event, sessionId) => {
+  const res = await fetch(`${DOPAMIND_API_URL}/api/devices/pairing/status/${sessionId}`);
+  if (!res.ok) return { status: 'pending' };
+  return res.json();
+});
+
+ipcMain.handle('generate-qr', async (_event, data) => {
+  const QRCode = require('qrcode');
+  const svg = await QRCode.toString(data, { type: 'svg', width: 200, margin: 1 });
+  return svg;
+});
+
 function showSplash() {
   splashWindow = new BrowserWindow({
     width: 300,

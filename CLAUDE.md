@@ -115,15 +115,53 @@ npm run build:linux    # Linux (AppImage + deb)
 4. **Streaming**: JSON events parsed in real-time → progress callbacks fired
 5. **Output**: Final result sent back to Telegram/Dopamind API
 
+### Dopamind QR Code Pairing
+
+Desktop and mobile can be paired via QR code scanning, eliminating manual token copy-paste.
+
+**Flow:**
+
+```
+Desktop                          Backend API                     Mobile App
+───────                          ───────────                     ──────────
+Click "Scan to Connect"
+  │
+  ├── POST /pairing/create ───►  Generate sessionId (5min TTL)
+  ◄── { sessionId } ──────────┘
+  │
+Show QR code
+(encodes { type, sessionId, apiUrl })
+  │
+Poll every 2s                                                   Tap "Scan QR" in menu
+  ├── GET /pairing/status ────►  Return 'pending'               Open camera, scan QR
+  │                                                             Confirm dialog → tap "Connect"
+  │                              Generate dpm_ token          ◄── POST /pairing/confirm
+  │                              Store hash in DB                  (user-authenticated)
+  │
+  ├── GET /pairing/status ────►  Return 'completed' + token
+  │
+Auto-save token, enable, connect
+```
+
+**API Endpoints (on Dopamind backend `routes/devices/index.ts`):**
+
+| Endpoint                              | Auth | Description                                           |
+| ------------------------------------- | ---- | ----------------------------------------------------- |
+| `POST /api/devices/pairing/create`    | No   | Create pairing session, return sessionId              |
+| `GET /api/devices/pairing/status/:id` | No   | Poll status, return token when completed (single-use) |
+| `POST /api/devices/pairing/confirm`   | Yes  | Mobile confirms, generates and links dpm\_ token      |
+
+Pairing sessions are stored in-memory (no DB migration needed), expire after 5 minutes.
+
 ### Module System (ESM + CJS)
 
-| File | Type | Reason |
-|------|------|--------|
-| main.cjs | CommonJS | Electron main process requirement |
-| preload-config.cjs | CommonJS | Electron preload requirement |
-| dopamind-client.cjs | CommonJS | Spawned by Electron main |
-| bot.js | ESM | Modern JS, async/await |
-| claude-runner.js | ESM | Shared core module |
+| File                | Type     | Reason                            |
+| ------------------- | -------- | --------------------------------- |
+| main.cjs            | CommonJS | Electron main process requirement |
+| preload-config.cjs  | CommonJS | Electron preload requirement      |
+| dopamind-client.cjs | CommonJS | Spawned by Electron main          |
+| bot.js              | ESM      | Modern JS, async/await            |
+| claude-runner.js    | ESM      | Shared core module                |
 
 CJS modules use dynamic `import()` to load ESM modules.
 
@@ -134,8 +172,9 @@ Stored in `.env` at Electron's userData path:
 - `TELEGRAM_BOT_TOKEN` — Telegram Bot API token
 - `ALLOWED_USER_IDS` — Comma-separated Telegram user IDs
 - `WORK_DIR` — Default working directory for Claude
+- `WORK_DIRS` — Additional working directories (JSON array), switchable via Telegram `/setdir`
 - `DOPAMIND_ENABLED` — Enable Dopamind client (`true`/`false`)
-- `DOPAMIND_TOKEN` — Dopamind API authentication token
+- `DOPAMIND_TOKEN` — Dopamind API authentication token (dpm\_..., via QR pairing or manual input)
 
 ## Code Quality
 

@@ -461,6 +461,65 @@
       background: var(--border);
       margin: 4px 0 20px;
     }
+
+    /* ── QR Pairing ── */
+    .pairing-section {
+      margin-bottom: 20px;
+    }
+    .qr-panel {
+      text-align: center;
+      padding: 12px 0 8px;
+    }
+    .qr-canvas {
+      display: inline-block;
+      padding: 16px;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 12px;
+    }
+    .qr-status {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .qr-status .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border-strong);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .qr-success {
+      color: var(--green);
+      font-weight: 500;
+    }
+    .qr-error {
+      color: var(--red);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+    .or-divider::before, .or-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
   </style>
 </head>
 <body>
@@ -549,6 +608,21 @@
       <button class="back-btn" data-navigate="main">‹</button>
       <div class="page-title">Dopamind</div>
     </div>
+
+    <div class="pairing-section">
+      <div class="section-label" data-i18n="config.scanToConnect">扫码连接</div>
+      <div class="qr-panel visible" id="qrPanel">
+        <div class="qr-canvas" id="qrCanvas">
+          <div class="spinner" style="margin: 40px auto;"></div>
+        </div>
+        <div class="qr-status" id="qrStatus">
+          <div class="spinner"></div>
+          <span data-i18n="config.waitingScan">等待手机扫码...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="or-divider" data-i18n="config.orManual">或手动输入</div>
 
     <div class="toggle-row">
       <label class="toggle-label" for="dopamindEnabled" data-i18n="config.enableDopamind">启用 Dopamind</label>
@@ -788,6 +862,74 @@
   document.getElementById('saveMainBtn').addEventListener('click', function() { saveConfig(this); });
   document.getElementById('saveDopamindBtn').addEventListener('click', function() { saveConfig(this); });
   document.getElementById('saveTelegramBtn').addEventListener('click', function() { saveConfig(this); });
+
+  // ── QR Pairing ──
+  let pairingPollTimer = null;
+  let pairingExpireTimer = null;
+
+  function stopPairing() {
+    if (pairingPollTimer) { clearInterval(pairingPollTimer); pairingPollTimer = null; }
+    if (pairingExpireTimer) { clearTimeout(pairingExpireTimer); pairingExpireTimer = null; }
+  }
+
+  async function startPairing() {
+    stopPairing();
+    const canvas = document.getElementById('qrCanvas');
+    const status = document.getElementById('qrStatus');
+
+    canvas.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
+    status.innerHTML = '<div class="spinner"></div><span>' +
+      (localeStrings['config.waitingScan'] || '等待手机扫码...') + '</span>';
+
+    try {
+      const result = await window.configAPI.createPairing();
+      if (!result || !result.sessionId) throw new Error('No session');
+
+      const qrData = JSON.stringify({
+        type: 'claudebot-pair',
+        sessionId: result.sessionId,
+        apiUrl: 'https://api.dopamind.app'
+      });
+      const svgHtml = await window.configAPI.generateQR(qrData);
+      canvas.innerHTML = svgHtml;
+
+      // Poll for completion
+      pairingPollTimer = setInterval(async () => {
+        try {
+          const s = await window.configAPI.pollPairing(result.sessionId);
+          if (s && s.status === 'completed' && s.token) {
+            stopPairing();
+            // Auto-fill token and enable
+            document.getElementById('dopamindToken').value = s.token;
+            document.getElementById('dopamindEnabled').checked = true;
+            updateDopamindFieldsState();
+            status.innerHTML = '<span class="qr-success">' +
+              (localeStrings['config.pairingSuccess'] || '连接成功') + '</span>';
+            // Auto-save
+            await window.configAPI.saveConfig(gatherAllConfig());
+          }
+        } catch (e) {
+          // Network error, keep polling
+        }
+      }, 2000);
+
+      // Auto-expire after 5 minutes, then auto-refresh
+      pairingExpireTimer = setTimeout(() => startPairing(), 5 * 60 * 1000);
+
+    } catch (e) {
+      // API not available — hide QR section, show manual input only
+      document.querySelector('.pairing-section').style.display = 'none';
+      document.querySelector('.or-divider').style.display = 'none';
+    }
+  }
+
+  // Stop polling when navigating away from dopamind view
+  const origNavigateTo = navigateTo;
+  navigateTo = function(viewName) {
+    if (viewName !== 'dopamind') stopPairing();
+    if (viewName === 'dopamind') startPairing();
+    origNavigateTo(viewName);
+  };
 
   init();
 </script>
