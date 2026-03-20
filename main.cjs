@@ -287,7 +287,7 @@ function showConfigWindow() {
 
   configWindow = new BrowserWindow({
     width: 450,
-    height: 620,
+    height: 520,
     resizable: false,
     maximizable: false,
     minimizable: false,

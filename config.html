@@ -14,15 +14,6 @@
       user-select: none;
     }
     h2 { margin-bottom: 20px; font-size: 18px; font-weight: 600; }
-    h3 {
-      margin-top: 20px;
-      margin-bottom: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #666;
-      border-top: 1px solid #ddd;
-      padding-top: 16px;
-    }
     .field { margin-bottom: 16px; }
     label {
       display: block;
@@ -108,60 +99,230 @@
       background: #b0d0ff;
       cursor: default;
     }
+
+    /* View management */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Platform cards */
+    .platform-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .platform-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 1px solid #d0d0d0;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .platform-card:hover {
+      border-color: #4a9eff;
+      box-shadow: 0 2px 8px rgba(74, 158, 255, 0.12);
+    }
+    .platform-card .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .platform-card .icon.dopamind {
+      background: #f58220;
+      padding: 0;
+      overflow: hidden;
+    }
+    .platform-card .icon.dopamind img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .platform-card .icon.telegram {
+      background: linear-gradient(135deg, #0088cc, #229ed9);
+      color: #fff;
+    }
+    .platform-card .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .platform-card .info .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+    .platform-card .info .desc {
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+    .platform-card .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ccc;
+      flex-shrink: 0;
+    }
+    .platform-card .status-dot.on {
+      background: #34c759;
+    }
+    .platform-card .arrow {
+      color: #ccc;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Sub-page header */
+    .sub-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      padding: 4px 10px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      color: #555;
+      line-height: 1;
+    }
+    .back-btn:hover { background: #eee; }
+    .sub-header h2 {
+      margin-bottom: 0;
+    }
+
+    /* Section divider */
+    .section-divider {
+      margin-top: 20px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
   </style>
 </head>
 <body>
-  <h2 data-i18n="config.title">ClaudeBot 设置</h2>
 
-  <div class="field">
-    <label data-i18n="config.languageLabel">界面语言</label>
-    <select id="language">
-      <option value="zh">中文</option>
-      <option value="en">English</option>
-    </select>
-  </div>
+  <!-- Main view -->
+  <div id="view-main" class="view active">
+    <h2 data-i18n="config.title">ClaudeBot 设置</h2>
 
-  <div class="field">
-    <label data-i18n="config.tokenLabel">Telegram Bot Token</label>
-    <div class="hint" data-i18n="config.tokenHint">从 @BotFather 获取</div>
-    <input type="password" id="token" placeholder="123456:ABC-DEF..." spellcheck="false" autocomplete="off">
-  </div>
+    <div class="section-divider" data-i18n="config.platformsSection" style="margin-top: 0">连接平台</div>
 
-  <div class="field">
-    <label data-i18n="config.userIdsLabel">允许的用户 ID</label>
-    <div class="hint" data-i18n="config.userIdsHint">多个 ID 用英文逗号分隔，可通过 @userinfobot 查询</div>
-    <input type="text" id="userIds" placeholder="123456789, 987654321" spellcheck="false" autocomplete="off">
-  </div>
+    <div class="platform-cards">
+      <div class="platform-card" id="card-dopamind">
+        <div class="icon dopamind">
+          <img src="assets/dopamind-logo.png" alt="Dopamind">
+        </div>
+        <div class="info">
+          <div class="name">Dopamind</div>
+          <div class="desc" data-i18n="config.dopamindDesc">通过 Dopamind App 远程控制</div>
+        </div>
+        <div class="status-dot" id="dot-dopamind"></div>
+        <div class="arrow">›</div>
+      </div>
+      <div class="platform-card" id="card-telegram">
+        <div class="icon telegram">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+            <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+          </svg>
+        </div>
+        <div class="info">
+          <div class="name">Telegram</div>
+          <div class="desc" data-i18n="config.telegramDesc">通过 Telegram Bot 远程控制</div>
+        </div>
+        <div class="status-dot" id="dot-telegram"></div>
+        <div class="arrow">›</div>
+      </div>
+    </div>
 
-  <div class="field">
-    <label data-i18n="config.workDirLabel">工作目录</label>
-    <div class="hint" data-i18n="config.workDirHint">Bot 的文件操作根目录</div>
-    <div class="dir-row">
-      <input type="text" id="workDir" placeholder="C:\Work" spellcheck="false" autocomplete="off">
-      <button type="button" id="browseBtn" data-i18n="config.browse">浏览...</button>
+    <div class="section-divider" data-i18n="config.generalSection">通用设置</div>
+
+    <div class="field">
+      <label data-i18n="config.workDirLabel">工作目录</label>
+      <div class="hint" data-i18n="config.workDirHint">Bot 的文件操作根目录</div>
+      <div class="dir-row">
+        <input type="text" id="workDir" placeholder="C:\Work" spellcheck="false" autocomplete="off">
+        <button type="button" id="browseBtn" data-i18n="config.browse">浏览...</button>
+      </div>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="allowSkipPermissions">
+      <label for="allowSkipPermissions" data-i18n="config.allowSkipPermissions">是否跳过频繁询问权限（建议勾选，使用体验更流畅）</label>
+    </div>
+
+    <div class="field">
+      <label data-i18n="config.languageLabel">界面语言</label>
+      <select id="language">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="saveMainBtn" data-i18n="config.save">保存</button>
     </div>
   </div>
 
-  <div class="checkbox-row">
-    <input type="checkbox" id="allowSkipPermissions">
-    <label for="allowSkipPermissions" data-i18n="config.allowSkipPermissions">是否跳过频繁询问权限（建议勾选，使用体验更流畅）</label>
+  <!-- Dopamind view -->
+  <div id="view-dopamind" class="view">
+    <div class="sub-header">
+      <button class="back-btn" data-navigate="main">‹</button>
+      <h2>Dopamind</h2>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="dopamindEnabled">
+      <label for="dopamindEnabled" data-i18n="config.enableDopamind">启用 Dopamind</label>
+    </div>
+
+    <div class="field">
+      <label data-i18n="config.deviceTokenLabel">Device Token</label>
+      <div class="hint" data-i18n="config.deviceTokenHint">从 Dopamind App → ClaudeBot 页面生成 (dpm_...)</div>
+      <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
+    </div>
+
+    <div class="actions">
+      <button type="button" id="saveDopamindBtn" data-i18n="config.save">保存</button>
+    </div>
   </div>
 
-  <h3 data-i18n="config.dopamindSection">Dopamind Integration</h3>
+  <!-- Telegram view -->
+  <div id="view-telegram" class="view">
+    <div class="sub-header">
+      <button class="back-btn" data-navigate="main">‹</button>
+      <h2>Telegram</h2>
+    </div>
 
-  <div class="checkbox-row">
-    <input type="checkbox" id="dopamindEnabled">
-    <label for="dopamindEnabled" data-i18n="config.enableDopamind">Enable Dopamind</label>
-  </div>
+    <div class="field">
+      <label data-i18n="config.tokenLabel">Telegram Bot Token</label>
+      <div class="hint" data-i18n="config.tokenHint">从 @BotFather 获取</div>
+      <input type="password" id="token" placeholder="123456:ABC-DEF..." spellcheck="false" autocomplete="off">
+    </div>
 
-  <div class="field">
-    <label data-i18n="config.deviceTokenLabel">Device Token</label>
-    <div class="hint" data-i18n="config.deviceTokenHint">从 Dopamind App → ClaudeBot 页面生成 (dpm_...)</div>
-    <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
-  </div>
+    <div class="field">
+      <label data-i18n="config.userIdsLabel">允许的用户 ID</label>
+      <div class="hint" data-i18n="config.userIdsHint">多个 ID 用英文逗号分隔，可通过 @userinfobot 查询</div>
+      <input type="text" id="userIds" placeholder="123456789, 987654321" spellcheck="false" autocomplete="off">
+    </div>
 
-  <div class="actions">
-    <button type="button" id="saveBtn" data-i18n="config.save">保存</button>
+    <div class="actions">
+      <button type="button" id="saveTelegramBtn" data-i18n="config.save">保存</button>
+    </div>
   </div>
 
   <script>
@@ -189,65 +350,93 @@
       });
     }
 
+    function navigateTo(viewName) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + viewName).classList.add('active');
+    }
+
+    function updateStatusDots() {
+      const dopamindOn = document.getElementById('dopamindEnabled').checked
+        && document.getElementById('dopamindToken').value.trim();
+      const telegramOn = !!document.getElementById('token').value.trim();
+      document.getElementById('dot-dopamind').classList.toggle('on', !!dopamindOn);
+      document.getElementById('dot-telegram').classList.toggle('on', telegramOn);
+    }
+
     function updateDopamindFieldsState() {
       const enabled = document.getElementById('dopamindEnabled').checked;
       document.getElementById('dopamindToken').disabled = !enabled;
     }
 
-    async function init() {
-      try {
-        // Load locale
-        const locale = await window.configAPI.getLocale();
-        document.getElementById('language').value = locale.lang;
-        applyLocale(locale.strings);
-
-        // Load config
-        const config = await window.configAPI.getConfig();
-        if (config.token) document.getElementById('token').value = config.token;
-        if (config.userIds) document.getElementById('userIds').value = config.userIds;
-        if (config.workDir) document.getElementById('workDir').value = config.workDir;
-        if (config.language) document.getElementById('language').value = config.language;
-        document.getElementById('allowSkipPermissions').checked = (config.allowSkipPermissions || 'true') === 'true';
-        // Dopamind fields
-        document.getElementById('dopamindEnabled').checked = config.dopamindEnabled === 'true';
-        if (config.dopamindToken) document.getElementById('dopamindToken').value = config.dopamindToken;
-        updateDopamindFieldsState();
-      } catch (e) {
-        // No existing config, fields stay empty
-      }
+    function gatherAllConfig() {
+      return {
+        token: document.getElementById('token').value.trim(),
+        userIds: document.getElementById('userIds').value.trim(),
+        workDir: document.getElementById('workDir').value.trim(),
+        dopamindEnabled: document.getElementById('dopamindEnabled').checked ? 'true' : 'false',
+        dopamindToken: document.getElementById('dopamindToken').value.trim(),
+        language: document.getElementById('language').value,
+        allowSkipPermissions: document.getElementById('allowSkipPermissions').checked ? 'true' : 'false',
+      };
     }
 
-    document.getElementById('dopamindEnabled').addEventListener('change', updateDopamindFieldsState);
-
-    document.getElementById('browseBtn').addEventListener('click', async () => {
-      const dir = await window.configAPI.selectDirectory();
-      if (dir) {
-        document.getElementById('workDir').value = dir;
-      }
-    });
-
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      const btn = document.getElementById('saveBtn');
+    async function saveConfig(btn) {
       btn.disabled = true;
       btn.textContent = localeStrings['config.saving'] || '保存中...';
       try {
-        await window.configAPI.saveConfig({
-          token: document.getElementById('token').value.trim(),
-          userIds: document.getElementById('userIds').value.trim(),
-          workDir: document.getElementById('workDir').value.trim(),
-          dopamindEnabled: document.getElementById('dopamindEnabled').checked ? 'true' : 'false',
-          dopamindToken: document.getElementById('dopamindToken').value.trim(),
-          language: document.getElementById('language').value,
-          allowSkipPermissions: document.getElementById('allowSkipPermissions').checked ? 'true' : 'false',
-        });
-        // Window will be closed by main process after save
+        await window.configAPI.saveConfig(gatherAllConfig());
       } catch (e) {
         btn.disabled = false;
         btn.textContent = localeStrings['config.save'] || '保存';
         const msg = localeStrings['config.saveFailed'] || '保存失败: {error}';
         alert(msg.replace('{error}', e.message));
       }
+    }
+
+    async function init() {
+      try {
+        const locale = await window.configAPI.getLocale();
+        document.getElementById('language').value = locale.lang;
+        applyLocale(locale.strings);
+
+        const config = await window.configAPI.getConfig();
+        if (config.token) document.getElementById('token').value = config.token;
+        if (config.userIds) document.getElementById('userIds').value = config.userIds;
+        if (config.workDir) document.getElementById('workDir').value = config.workDir;
+        if (config.language) document.getElementById('language').value = config.language;
+        document.getElementById('allowSkipPermissions').checked = (config.allowSkipPermissions || 'true') === 'true';
+        document.getElementById('dopamindEnabled').checked = config.dopamindEnabled === 'true';
+        if (config.dopamindToken) document.getElementById('dopamindToken').value = config.dopamindToken;
+        updateDopamindFieldsState();
+        updateStatusDots();
+      } catch (e) {
+        // No existing config
+      }
+    }
+
+    // Navigation
+    document.getElementById('card-dopamind').addEventListener('click', () => navigateTo('dopamind'));
+    document.getElementById('card-telegram').addEventListener('click', () => navigateTo('telegram'));
+    document.querySelectorAll('[data-navigate]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        updateStatusDots();
+        navigateTo(btn.getAttribute('data-navigate'));
+      });
     });
+
+    // Dopamind toggle
+    document.getElementById('dopamindEnabled').addEventListener('change', updateDopamindFieldsState);
+
+    // Browse
+    document.getElementById('browseBtn').addEventListener('click', async () => {
+      const dir = await window.configAPI.selectDirectory();
+      if (dir) document.getElementById('workDir').value = dir;
+    });
+
+    // Save buttons
+    document.getElementById('saveMainBtn').addEventListener('click', function() { saveConfig(this); });
+    document.getElementById('saveDopamindBtn').addEventListener('click', function() { saveConfig(this); });
+    document.getElementById('saveTelegramBtn').addEventListener('click', function() { saveConfig(this); });
 
     init();
   </script>
