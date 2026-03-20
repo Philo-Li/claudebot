@@ -38,6 +38,13 @@ function loadConfig(envPath) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const allowedUsers = process.env.ALLOWED_USER_IDS?.split(',').map((id) => parseInt(id.trim())) || [];
   const workDir = process.env.WORK_DIR || process.cwd();
+  let workDirs = [];
+  try {
+    workDirs = process.env.WORK_DIRS ? JSON.parse(process.env.WORK_DIRS) : [];
+  } catch (e) {
+    workDirs = [];
+  }
+  if (workDirs.length === 0 && workDir) workDirs = [workDir];
   const allowSkipPermissions = (process.env.ALLOW_SKIP_PERMISSIONS || 'true').toLowerCase() === 'true';
 
   if (!token) {
@@ -48,7 +55,7 @@ function loadConfig(envPath) {
     console.warn(t('bot.noUserIdsWarning'));
   }
 
-  return { token, allowedUsers, workDir, allowSkipPermissions };
+  return { token, allowedUsers, workDir, workDirs, allowSkipPermissions };
 }
 
 function isAllowed(userId) {
@@ -240,14 +247,35 @@ function registerHandlers() {
     }
   });
 
-  bot.onText(/\/setdir (.+)/, (msg, match) => {
+  bot.onText(/\/setdir\s*(.*)/, (msg, match) => {
     if (!isAllowed(msg.from.id)) return;
-    const newDir = match[1].trim();
-    if (existsSync(newDir)) {
-      config.workDir = newDir;
-      bot.sendMessage(msg.chat.id, t('bot.workDirSet', { dir: newDir }));
+    const arg = (match[1] || '').trim();
+
+    // No argument: show available directories to pick from
+    if (!arg) {
+      if (config.workDirs.length <= 1) {
+        bot.sendMessage(msg.chat.id, t('bot.currentWorkDir', { dir: config.workDir }));
+        return;
+      }
+      const list = config.workDirs.map((d, i) => `${i + 1}. ${d}${d === config.workDir ? ' ✓' : ''}`).join('\n');
+      bot.sendMessage(msg.chat.id, t('bot.pickDir', { list }));
+      return;
+    }
+
+    // Numeric argument: pick from saved directories by index
+    const idx = parseInt(arg);
+    if (!isNaN(idx) && idx >= 1 && idx <= config.workDirs.length) {
+      config.workDir = config.workDirs[idx - 1];
+      bot.sendMessage(msg.chat.id, t('bot.workDirSet', { dir: config.workDir }));
+      return;
+    }
+
+    // Path argument: set arbitrary directory
+    if (existsSync(arg)) {
+      config.workDir = arg;
+      bot.sendMessage(msg.chat.id, t('bot.workDirSet', { dir: arg }));
     } else {
-      bot.sendMessage(msg.chat.id, t('bot.dirNotExist', { dir: newDir }));
+      bot.sendMessage(msg.chat.id, t('bot.dirNotExist', { dir: arg }));
     }
   });
 

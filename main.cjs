@@ -230,6 +230,7 @@ function parseEnvFile() {
     token: '',
     userIds: '',
     workDir: '',
+    workDirs: '[]',
     dopamindEnabled: '',
     dopamindToken: '',
     language: '',
@@ -247,6 +248,7 @@ function parseEnvFile() {
     if (key === 'TELEGRAM_BOT_TOKEN') result.token = val;
     else if (key === 'ALLOWED_USER_IDS') result.userIds = val;
     else if (key === 'WORK_DIR') result.workDir = val;
+    else if (key === 'WORK_DIRS') result.workDirs = val;
     else if (key === 'DOPAMIND_ENABLED') result.dopamindEnabled = val;
     else if (key === 'DOPAMIND_TOKEN') result.dopamindToken = val;
     else if (key === 'LANGUAGE') result.language = val;
@@ -255,7 +257,16 @@ function parseEnvFile() {
   return result;
 }
 
-function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken, language, allowSkipPermissions }) {
+function writeEnvFile({
+  token,
+  userIds,
+  workDir,
+  workDirs,
+  dopamindEnabled,
+  dopamindToken,
+  language,
+  allowSkipPermissions,
+}) {
   const content = [
     '# Telegram Bot Token',
     `TELEGRAM_BOT_TOKEN=${token || ''}`,
@@ -263,8 +274,10 @@ function writeEnvFile({ token, userIds, workDir, dopamindEnabled, dopamindToken,
     '# Allowed Telegram user IDs (comma-separated)',
     `ALLOWED_USER_IDS=${userIds || ''}`,
     '',
-    '# Work directory',
+    '# Work directory (default)',
     `WORK_DIR=${workDir || ''}`,
+    '# Additional work directories (JSON array)',
+    `WORK_DIRS=${workDirs || '[]'}`,
     '',
     '# Dopamind Integration',
     `DOPAMIND_ENABLED=${dopamindEnabled || 'false'}`,
@@ -286,9 +299,11 @@ function showConfigWindow() {
   }
 
   configWindow = new BrowserWindow({
-    width: 450,
-    height: 520,
-    resizable: false,
+    width: 440,
+    height: 580,
+    resizable: true,
+    minWidth: 380,
+    minHeight: 480,
     maximizable: false,
     minimizable: false,
     fullscreenable: false,
