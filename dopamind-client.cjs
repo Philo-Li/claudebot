@@ -13,6 +13,13 @@ let pollTimer = null;
 let running = false;
 let claudeRunner = null; // dynamically imported ESM module
 
+function normalizeWorkDirKey(workDir) {
+  if (typeof workDir !== 'string') return 'default';
+  const normalized = workDir.trim();
+  if (!normalized) return 'default';
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
 function getAdvertisedDirectories(config) {
   const directories = [];
   const seen = new Set();
@@ -176,8 +183,11 @@ async function processMessage(config, msg) {
       claudeRunner = await import('./claude-runner.js');
     }
 
-    const sessionKey = msg.conversationId ? `dopamind_${msg.userId}_${msg.conversationId}` : `dopamind_${msg.userId}`;
     const workDir = msg.workDir || config.defaultWorkDir || process.cwd();
+    const workDirKey = normalizeWorkDirKey(workDir);
+    const sessionKey = msg.conversationId
+      ? `dopamind_${msg.userId}_${msg.conversationId}_${workDirKey}`
+      : `dopamind_${msg.userId}_${workDirKey}`;
 
     const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress, {
       editDetails: true,

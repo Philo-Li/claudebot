@@ -306,6 +306,7 @@ export function handleStreamMessage(msg, sessionKey, onProgress, opts = {}) {
 const MAX_API_RETRIES = 2;
 const API_RETRY_DELAY = 5000;
 const API_RETRY_PATTERN = /API Error: 5\d{2}\b|"type":"api_error"|overloaded/;
+const INVALID_SESSION_PATTERN = /No conversation found with session ID/i;
 
 export async function callClaude(sessionKey, prompt, workDir, onProgress, opts = {}) {
   sessionKey = String(sessionKey);
@@ -406,16 +407,25 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
 
       const errorOutput = finalResult?.output || stderr || '';
 
-      // Auto-retry with new session on "Prompt is too long"
-      if (!retryState.contextRetried && sessionId && errorOutput.includes('Prompt is too long')) {
-        console.log(`[${new Date().toISOString()}] 上下文超限，清除会话并重试`);
+      // Auto-retry with new session when the saved session can no longer be resumed.
+      if (
+        sessionId &&
+        ((!retryState.contextRetried && errorOutput.includes('Prompt is too long')) ||
+          (!retryState.invalidSessionRetried && INVALID_SESSION_PATTERN.test(errorOutput)))
+      ) {
+        const isInvalidSession = INVALID_SESSION_PATTERN.test(errorOutput);
+        console.log(`[${new Date().toISOString()}] ${isInvalidSession ? '会话失效' : '上下文超限'}，清除会话并重试`);
         sessions.delete(sessionKey);
         resetSessionUsage(sessionKey);
         saveSessions();
         resolve(
           callClaude(sessionKey, prompt, workDir, onProgress, {
             ...opts,
-            _retryState: { ...retryState, contextRetried: true },
+            _retryState: {
+              ...retryState,
+              contextRetried: retryState.contextRetried || !isInvalidSession,
+              invalidSessionRetried: retryState.invalidSessionRetried || isInvalidSession,
+            },
           }),
         );
         return;
