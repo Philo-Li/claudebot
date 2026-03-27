@@ -462,6 +462,29 @@
       margin: 4px 0 20px;
     }
 
+    /* ── Input with eye toggle ── */
+    .input-eye-row {
+      position: relative;
+    }
+    .input-eye-row input {
+      padding-right: 36px;
+    }
+    .eye-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s ease;
+    }
+    .eye-btn:hover { color: var(--text-secondary); }
+
     /* ── QR Pairing ── */
     .pairing-section {
       margin-bottom: 20px;
@@ -635,7 +658,13 @@
     <div class="field">
       <label class="field-label" data-i18n="config.deviceTokenLabel">Device Token</label>
       <div class="field-hint" data-i18n="config.deviceTokenHint">从 Dopamind App → ClaudeBot 页面生成 (dpm_...)</div>
-      <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
+      <div class="input-eye-row">
+        <input type="password" id="dopamindToken" placeholder="dpm_..." spellcheck="false" autocomplete="off">
+        <button type="button" class="eye-btn" data-toggle-eye="dopamindToken" aria-label="Toggle visibility">
+          <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="actions">
@@ -653,7 +682,13 @@
     <div class="field">
       <label class="field-label" data-i18n="config.tokenLabel">Bot Token</label>
       <div class="field-hint" data-i18n="config.tokenHint">从 @BotFather 获取</div>
-      <input type="password" id="token" placeholder="123456:ABC-DEF..." spellcheck="false" autocomplete="off">
+      <div class="input-eye-row">
+        <input type="password" id="token" placeholder="123456:ABC-DEF..." spellcheck="false" autocomplete="off">
+        <button type="button" class="eye-btn" data-toggle-eye="token" aria-label="Toggle visibility">
+          <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="field">
@@ -829,7 +864,7 @@
   }
 
   // Navigation
-  document.getElementById('card-dopamind').addEventListener('click', () => navigateTo('dopamind'));
+  document.getElementById('card-dopamind').addEventListener('click', () => { navigateTo('dopamind'); startPairing(); });
   document.getElementById('card-telegram').addEventListener('click', () => navigateTo('telegram'));
   document.querySelectorAll('[data-navigate]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -859,6 +894,17 @@
     if (dir) addWorkDir(dir);
   });
 
+  // Eye toggle for password fields
+  document.querySelectorAll('.eye-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.toggleEye);
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.querySelector('.icon-eye').style.display = isPassword ? 'none' : '';
+      btn.querySelector('.icon-eye-off').style.display = isPassword ? '' : 'none';
+    });
+  });
+
   document.getElementById('saveMainBtn').addEventListener('click', function() { saveConfig(this); });
   document.getElementById('saveDopamindBtn').addEventListener('click', function() { saveConfig(this); });
   document.getElementById('saveTelegramBtn').addEventListener('click', function() { saveConfig(this); });
@@ -882,34 +928,48 @@
       (localeStrings['config.waitingScan'] || '等待手机扫码...') + '</span>';
 
     try {
+      console.log('[Pairing] Creating pairing session...');
       const result = await window.configAPI.createPairing();
-      if (!result || !result.sessionId) throw new Error('No session');
+      console.log('[Pairing] Create response:', JSON.stringify(result));
+      if (!result || !result.sessionId) throw new Error('No session returned: ' + JSON.stringify(result));
 
       const qrData = JSON.stringify({
         type: 'claudebot-pair',
         sessionId: result.sessionId,
-        apiUrl: 'https://api.dopamind.app'
+        apiUrl: 'https://staging-api.dopamind.app'
       });
+      console.log('[Pairing] QR data:', qrData);
       const svgHtml = await window.configAPI.generateQR(qrData);
       canvas.innerHTML = svgHtml;
 
       // Poll for completion
+      let pollCount = 0;
       pairingPollTimer = setInterval(async () => {
         try {
+          pollCount++;
           const s = await window.configAPI.pollPairing(result.sessionId);
+          console.log(`[Pairing] Poll #${pollCount} response:`, JSON.stringify(s));
           if (s && s.status === 'completed' && s.token) {
             stopPairing();
+            console.log('[Pairing] SUCCESS — token received:', s.token.substring(0, 8) + '...');
             // Auto-fill token and enable
             document.getElementById('dopamindToken').value = s.token;
             document.getElementById('dopamindEnabled').checked = true;
             updateDopamindFieldsState();
             status.innerHTML = '<span class="qr-success">' +
               (localeStrings['config.pairingSuccess'] || '连接成功') + '</span>';
-            // Auto-save
-            await window.configAPI.saveConfig(gatherAllConfig());
+            // Auto-save (keep window open to show success)
+            await window.configAPI.saveConfig(gatherAllConfig(), { keepOpen: true });
+          } else if (s && s.status === 'expired') {
+            console.log('[Pairing] Session expired, restarting...');
+            startPairing();
+          } else if (s && s.status === 'error') {
+            console.error('[Pairing] Server returned error:', JSON.stringify(s));
+            status.innerHTML = '<span style="color:#e74c3c;">配对失败: ' + (s.message || '未知错误') + '</span>';
+            stopPairing();
           }
         } catch (e) {
-          // Network error, keep polling
+          console.error('[Pairing] Poll error:', e.message);
         }
       }, 2000);
 
@@ -917,6 +977,7 @@
       pairingExpireTimer = setTimeout(() => startPairing(), 5 * 60 * 1000);
 
     } catch (e) {
+      console.error('[Pairing] startPairing failed:', e.message, e.stack);
       // API not available — hide QR section, show manual input only
       document.querySelector('.pairing-section').style.display = 'none';
       document.querySelector('.or-divider').style.display = 'none';
@@ -924,12 +985,9 @@
   }
 
   // Stop polling when navigating away from dopamind view
-  const origNavigateTo = navigateTo;
-  navigateTo = function(viewName) {
-    if (viewName !== 'dopamind') stopPairing();
-    if (viewName === 'dopamind') startPairing();
-    origNavigateTo(viewName);
-  };
+  document.querySelectorAll('[data-navigate]').forEach(btn => {
+    btn.addEventListener('click', () => stopPairing());
+  });
 
   init();
 </script>

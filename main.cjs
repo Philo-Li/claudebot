@@ -18,7 +18,7 @@ let dopamindRunning = false;
 let configWindow = null;
 let splashWindow = null;
 
-const DOPAMIND_API_URL = 'https://api.dopamind.app';
+const DOPAMIND_API_URL = 'https://staging-api.dopamind.app';
 const userDataPath = app.getPath('userData');
 const envPath = path.join(userDataPath, '.env');
 const sessionsPath = path.join(userDataPath, 'sessions.json');
@@ -328,9 +328,9 @@ ipcMain.handle('get-config', () => {
   return parseEnvFile();
 });
 
-ipcMain.handle('save-config', async (_event, data) => {
+ipcMain.handle('save-config', async (_event, data, opts) => {
   writeEnvFile(data);
-  if (configWindow) {
+  if (configWindow && !(opts && opts.keepOpen)) {
     configWindow.close();
   }
   // Restart services with new config
@@ -364,13 +364,15 @@ ipcMain.handle('create-pairing', async () => {
     headers: { 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error(`Pairing create failed: ${res.status}`);
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 });
 
 ipcMain.handle('poll-pairing', async (_event, sessionId) => {
   const res = await fetch(`${DOPAMIND_API_URL}/api/devices/pairing/status/${sessionId}`);
   if (!res.ok) return { status: 'pending' };
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 });
 
 ipcMain.handle('generate-qr', async (_event, data) => {
