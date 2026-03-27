@@ -18,7 +18,7 @@ let dopamindRunning = false;
 let configWindow = null;
 let splashWindow = null;
 
-const DOPAMIND_API_URL = 'https://staging-api.dopamind.app';
+const DOPAMIND_API_URL = 'https://api.dopamind.app';
 const userDataPath = app.getPath('userData');
 const envPath = path.join(userDataPath, '.env');
 const sessionsPath = path.join(userDataPath, 'sessions.json');

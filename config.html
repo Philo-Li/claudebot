@@ -936,7 +936,7 @@
       const qrData = JSON.stringify({
         type: 'claudebot-pair',
         sessionId: result.sessionId,
-        apiUrl: 'https://staging-api.dopamind.app'
+        apiUrl: 'https://api.dopamind.app'
       });
       console.log('[Pairing] QR data:', qrData);
       const svgHtml = await window.configAPI.generateQR(qrData);
