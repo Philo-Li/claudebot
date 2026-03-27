@@ -171,6 +171,7 @@ async function startBot() {
           apiUrl: DOPAMIND_API_URL,
           token: envConfig.dopamindToken,
           defaultWorkDir: envConfig.workDir || process.cwd(),
+          workDirs: envConfig.workDirs || '[]',
           allowSkipPermissions: (envConfig.allowSkipPermissions || 'true') === 'true',
           onError: (errMsg) => {
             dopamindRunning = false;

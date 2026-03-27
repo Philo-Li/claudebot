@@ -13,6 +13,38 @@ let pollTimer = null;
 let running = false;
 let claudeRunner = null; // dynamically imported ESM module
 
+function getAdvertisedDirectories(config) {
+  const directories = [];
+  const seen = new Set();
+
+  const pushDir = (value) => {
+    if (typeof value !== 'string') return;
+    const normalized = value.trim();
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    directories.push(normalized);
+  };
+
+  pushDir(config.defaultWorkDir);
+
+  if (Array.isArray(config.workDirs)) {
+    for (const dir of config.workDirs) {
+      pushDir(dir);
+    }
+  } else if (typeof config.workDirs === 'string') {
+    try {
+      const parsed = JSON.parse(config.workDirs);
+      if (Array.isArray(parsed)) {
+        for (const dir of parsed) {
+          pushDir(dir);
+        }
+      }
+    } catch {}
+  }
+
+  return directories;
+}
+
 /**
  * Make an HTTP(S) request with JSON body using fetch
  */
@@ -58,8 +90,16 @@ async function request(method, fullUrl, token, body, timeoutMs = 10000) {
  */
 async function pollOnce(config) {
   try {
-    const pollUrl = `${config.apiUrl}/api/desktop-queue/poll?limit=1`;
-    const res = await request('GET', pollUrl, config.token, null);
+    const pollUrl = new URL(`${config.apiUrl}/api/desktop-queue/poll`);
+    pollUrl.searchParams.set('limit', '1');
+
+    const directories = getAdvertisedDirectories(config);
+    if (directories.length > 0) {
+      pollUrl.searchParams.set('directories', JSON.stringify(directories));
+      pollUrl.searchParams.set('currentDir', directories[0]);
+    }
+
+    const res = await request('GET', pollUrl.toString(), config.token, null);
 
     if (res.status === 401) {
       const errMsg = res.data?.error?.message || 'Invalid device token';
@@ -203,7 +243,7 @@ async function processMessage(config, msg) {
 async function start({ dopamindConfig }) {
   if (running) return;
 
-  const { apiUrl, token, defaultWorkDir, allowSkipPermissions } = dopamindConfig;
+  const { apiUrl, token, defaultWorkDir, workDirs, allowSkipPermissions } = dopamindConfig;
 
   if (!apiUrl || !token) {
     console.error('[Dopamind] Missing required config (apiUrl, token)');
@@ -216,7 +256,7 @@ async function start({ dopamindConfig }) {
   }
 
   running = true;
-  const config = { apiUrl, token, defaultWorkDir, allowSkipPermissions, onError: dopamindConfig.onError };
+  const config = { apiUrl, token, defaultWorkDir, workDirs, allowSkipPermissions, onError: dopamindConfig.onError };
 
   console.log(`[Dopamind] Polling started`);
   console.log(`[Dopamind] API: ${apiUrl}`);
