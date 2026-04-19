@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.1.6 (2026-04-19)
+
+### 中文
+
+#### 功能增强
+
+- 同一 session 的并发请求现在自动串行执行，避免多条消息同时发送时产生冲突。
+- Dopamind session key 改为按工作目录隔离，同一用户在不同目录下各自维护独立上下文。
+- 新增 `migrateSessionKey()`，自动将旧格式 session key 迁移到新格式，历史会话不丢失。
+- 无 `conversationId` 的消息改为启动独立 session，不再共用同一用户的全局 session。
+
+---
+
+### English
+
+#### Feature Enhancements
+
+- Concurrent calls to the same session are now serialized automatically, preventing conflicts when multiple messages arrive simultaneously.
+- Dopamind session keys are now scoped per working directory, so each user gets separate context per directory.
+- Added `migrateSessionKey()` to transparently migrate legacy session keys to the new format, preserving conversation history.
+- Messages without a `conversationId` now start an isolated session instead of sharing the user's global session.
+
+---
+
 ## v1.1.5 (2026-03-27)
 
 ### 中文
