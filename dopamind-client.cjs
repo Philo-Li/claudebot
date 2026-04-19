@@ -185,13 +185,23 @@ async function processMessage(config, msg) {
 
     const workDir = msg.workDir || config.defaultWorkDir || process.cwd();
     const workDirKey = normalizeWorkDirKey(workDir);
-    const sessionKey = msg.conversationId
+    const hasConversationId = typeof msg.conversationId === 'string' && msg.conversationId.trim() !== '';
+    const sessionKey = hasConversationId
       ? `dopamind_${msg.userId}_${msg.conversationId}_${workDirKey}`
-      : `dopamind_${msg.userId}_${workDirKey}`;
+      : `dopamind_${msg.userId}_${msg.id}_${workDirKey}`;
+
+    // Migrate legacy session keys (without workDir suffix) to new format
+    if (hasConversationId) {
+      const legacyKey = `dopamind_${msg.userId}_${msg.conversationId}`;
+      claudeRunner.migrateSessionKey(legacyKey, sessionKey);
+    } else {
+      console.warn(`[Dopamind] Message ${msg.id} missing conversationId; starting isolated session`);
+    }
 
     const result = await claudeRunner.callClaude(sessionKey, msg.prompt, workDir, onProgress, {
       editDetails: true,
       allowSkipPermissions: config.allowSkipPermissions,
+      persistSession: hasConversationId,
     });
 
     // Final progress flush

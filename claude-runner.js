@@ -23,6 +23,7 @@ const { t } = require('./i18n.cjs');
 let claudePath = 'claude';
 let sessions = new Map();
 let runningProcesses = new Map();
+let pendingCalls = new Map();
 let sessionUsage = new Map();
 let sessionsFilePath = '';
 
@@ -114,6 +115,7 @@ export function initRunner({ sessionsPath } = {}) {
   console.log(t('runner.sessionsLoaded', { count: sessions.size }));
 
   runningProcesses = new Map();
+  pendingCalls = new Map();
 }
 
 // ============== Accessors ==============
@@ -126,6 +128,16 @@ export function deleteSession(sessionKey) {
   sessionKey = String(sessionKey);
   sessions.delete(sessionKey);
   saveSessions();
+}
+
+export function migrateSessionKey(oldKey, newKey) {
+  oldKey = String(oldKey);
+  newKey = String(newKey);
+  if (sessions.has(newKey) || !sessions.has(oldKey)) return;
+  sessions.set(newKey, sessions.get(oldKey));
+  sessions.delete(oldKey);
+  saveSessions();
+  console.log(`[session] migrated: ${oldKey} → ${newKey}`);
 }
 
 export function getRunningProcesses() {
@@ -308,11 +320,30 @@ const API_RETRY_DELAY = 5000;
 const API_RETRY_PATTERN = /API Error: 5\d{2}\b|"type":"api_error"|overloaded/;
 const INVALID_SESSION_PATTERN = /No conversation found with session ID/i;
 
-export async function callClaude(sessionKey, prompt, workDir, onProgress, opts = {}) {
+function runSerialized(sessionKey, task, onProgress) {
+  const previous = pendingCalls.get(sessionKey);
+  if (previous && onProgress) {
+    onProgress('[status:processing] waiting for previous task...');
+  }
+
+  const current = (previous || Promise.resolve()).catch(() => {}).then(task);
+
+  const tracked = current.finally(() => {
+    if (pendingCalls.get(sessionKey) === tracked) {
+      pendingCalls.delete(sessionKey);
+    }
+  });
+
+  pendingCalls.set(sessionKey, tracked);
+  return current;
+}
+
+async function callClaudeNow(sessionKey, prompt, workDir, onProgress, opts = {}) {
   sessionKey = String(sessionKey);
   const retryState = opts._retryState || { contextRetried: false, apiRetries: 0 };
   return new Promise((resolve) => {
-    const sessionId = sessions.get(sessionKey);
+    const persistSession = opts.persistSession !== false;
+    const sessionId = persistSession ? sessions.get(sessionKey) : null;
     const allowSkipPermissions = opts.allowSkipPermissions !== false;
     const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose'];
     if (allowSkipPermissions) {
@@ -358,7 +389,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
           }
 
           if (msg.type === 'result') {
-            if (msg.session_id) {
+            if (persistSession && msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
             }
@@ -390,7 +421,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
             lastAssistantUsage = msg.message.usage;
           }
           if (msg.type === 'result') {
-            if (msg.session_id) {
+            if (persistSession && msg.session_id) {
               sessions.set(sessionKey, msg.session_id);
               saveSessions();
             }
@@ -409,6 +440,7 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
 
       // Auto-retry with new session when the saved session can no longer be resumed.
       if (
+        persistSession &&
         sessionId &&
         ((!retryState.contextRetried && errorOutput.includes('Prompt is too long')) ||
           (!retryState.invalidSessionRetried && INVALID_SESSION_PATTERN.test(errorOutput)))
@@ -464,4 +496,9 @@ export async function callClaude(sessionKey, prompt, workDir, onProgress, opts =
       resolve({ success: false, output: t('runner.execError', { message: err.message }) });
     });
   });
+}
+
+export async function callClaude(sessionKey, prompt, workDir, onProgress, opts = {}) {
+  sessionKey = String(sessionKey);
+  return runSerialized(sessionKey, () => callClaudeNow(sessionKey, prompt, workDir, onProgress, opts), onProgress);
 }
