@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.1.7 (2026-04-19)
+
+### 中文
+
+#### 问题修复
+
+- 修复自动更新模块因缺少 `sax` 依赖导致应用启动时崩溃的问题。
+
+---
+
+### English
+
+#### Bug Fixes
+
+- Fixed a startup crash caused by missing `sax` dependency in the auto-updater module.
+
+---
+
 ## v1.1.6 (2026-04-19)
 
 ### 中文
