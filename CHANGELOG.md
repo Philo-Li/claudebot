@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.1.8 (2026-04-19)
+
+### 中文
+
+#### 问题修复
+
+- 修复自动更新后桌面快捷方式消失的问题。
+
+---
+
+### English
+
+#### Bug Fixes
+
+- Fixed desktop shortcut disappearing after auto-update on Windows.
+
+---
+
 ## v1.1.7 (2026-04-19)
 
 ### 中文
